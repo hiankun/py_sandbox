@@ -8,7 +8,7 @@ The code was a quick implementation of
 '''
 def year_parser(y):
     a = y // 100
-    b = y - a * 100
+    b = y % 100
 
     return a, b
 
