@@ -22,30 +22,30 @@ ap.add_argument("-k", "--search-keywords", required=True,
     help="""The searching keyword.
 NOTE: Without assign -d option, the images will be saved as
       your_keywords/your-keywords-dddd.ext.
-      When -d option is given, the images will be saved as
-      dir_name/directory-name-dddd.ext.""")
-ap.add_argument("-f", "--file-name",
-    help="""The file name to be saved.
-NOTE: Without assign -f option, the images will be saved as
-      dir_name/your-keywords-dddd.ext.
-      When -f option is given, the images will be saved as
+      When -d or -f option is given, the images will be saved as
       dir_name/file-name-dddd.ext.""")
 ap.add_argument("-s", "--search-size", default='any',
     help="image size to search; the default value is 'any'")
 ap.add_argument("-n", "--image-number", type=int, default='10',
     help="Image number to search; the default value is 10.")
-ap.add_argument("-d", "--saving-directory",
+ap.add_argument("-d", "--saving-directory", default=None,
     help="Directory in which the images to be saved.")
+ap.add_argument("-f", "--saving-file", default=None,
+    help="File name to be saved.")
 args = vars(ap.parse_args())
 
 # set up
 keywords = args["search_keywords"]
-filename = args["file_name"]
+filename = args["saving_file"]
 size = args["search_size"]
 number = args["image_number"]
-directory = ( args["saving_directory"]
+directory = ( "_".join(args["saving_directory"].split())
         if args["saving_directory"] is not None
         else "_".join(keywords.split()) )
+filename = ( "-".join(args["saving_file"].split())
+        if args["saving_file"] is not None
+        else "-".join(keywords.split()) )
+
 if os.path.exists(directory):
     directory += time.strftime("_%Y%m%d_%H%M%S")
 os.makedirs(directory)
@@ -76,14 +76,12 @@ for i, img in enumerate(images):
                     .format(response.info()['Content-Type']))
             continue
         if (file_type == 'image' and file_ext != 'vnd.ms-photo'):
-            if filename == None:
-                file_name = "{0}/{1}_{2:04d}.{3}".format(
-                        directory, "-".join(keywords.split()), i, file_ext)
-            else:
-                file_name = "{0}/{1}_{2:04d}.{3}".format(
-                        directory, "-".join(filename.split()), i, file_ext)
-            img.to_file(file_name)
-            print('{0} has been saved...'.format(file_name))
+            file_path = "{0}/{1}_{2:04d}.{3}".format(directory, filename, i, file_ext)
+            #file_path = "{0}/{1}_{2:04d}.{3}".format(
+            #        directory,
+            #        "-".join(filename.split()), i, file_ext)
+            img.to_file(file_path)
+            print('{0} has been saved...'.format(file_path))
     except urllib3.exceptions.HTTPError as e:
         print('HTTPError: ', e)
         continue
