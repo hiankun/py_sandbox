@@ -6,7 +6,7 @@ Chhamkhó iáⁿphìⁿ: [Hit-kang sī pài-kúi?](https://youtu.be/yoHtaDfYj3k)
 
 Tī iáⁿphìⁿ lāité ū iōng tio̍h ê jīsû
 
- English | Tâigí | chùkái
+English | Tâigí | chùkái
 ---|---|---
 code/program | tiānnáu thêngsū |
 Python | Phaisiâ |

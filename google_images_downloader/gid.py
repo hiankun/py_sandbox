@@ -39,10 +39,10 @@ keywords = args["search_keywords"]
 filename = args["saving_file"]
 size = args["search_size"]
 number = args["image_number"]
-directory = ( "_".join(args["saving_directory"].split())
+directory = ( "_".join(args["saving_directory"].split()) # avoid spaces in directory path
         if args["saving_directory"] is not None
         else "_".join(keywords.split()) )
-filename = ( "-".join(args["saving_file"].split())
+filename = ( "-".join(args["saving_file"].split())       # avoid spaces in filename
         if args["saving_file"] is not None
         else "-".join(keywords.split()) )
 
