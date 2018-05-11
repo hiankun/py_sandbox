@@ -11,7 +11,7 @@ English | Tâigí | chùkái
 code/program | tiānnáu thêngsū |
 Python | Phaisiâ |
 
-</hr>
+---
 
 ### [keywords]
 
