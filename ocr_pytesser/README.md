@@ -1,3 +1,5 @@
+__NOTE: This is an incomplete project.__
+
 [2018-03-10]
 
 * Tried to use [pytesseract](https://github.com/madmaze/pytesseract) to extract text from images.
@@ -21,9 +23,9 @@ g Chia si té Z ch6a bﬁnji.
 
 3|
 
- 
 
- 
+
+
 
 22:36 10-Mar-18
 ```
@@ -38,9 +40,9 @@ g Chia si té Z ch6a bﬁnji.
 
 Ễl
 
- 
 
- 
+
+
 
 22:36 10-Mar-18
 ```
@@ -58,7 +60,7 @@ Type "help", "copyright", "credits" or "license" for more information.
 
 The Zen of Python, by Tim Peters
 
- 
+
 
 Beautiful is better than ugly.
 
@@ -95,7 +97,7 @@ If the implementation is hard to explain, it's a bad idea.
 If the implementation is easy to explain, it may be a good idea.
 Namespaces are one honking great idea -- let's do more of those!
 ```
- 
+
 ## Vietnamese text
 
 ![](test_img/viet.png)
@@ -122,7 +124,7 @@ ngưng khi hai miền đạt được một thỏa hiệp ngừng bắn vào ng�
 và vì không có hiệp định hòa hình nên trên thực tế, cuộc chiến này vẫn chưa kết thúc cho
 đến ngày nay. (xem tiếp…)
 
-   
+
 
 Mới chọn: Cher ~ Kế hoạch Marshall ~ Viện bảo tàng Louvre
 ```
