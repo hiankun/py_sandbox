@@ -2,17 +2,23 @@ import cv2
 import sys
 import argparse
 import json
+import csv
 import os
 
 class CoordinateStore:
     def __init__(self):
         self.points = []
 
-    def save_coord(self, coord, file_name):
+    def saveas_json(self, coord, file_name):
         with open(file_name, 'w') as outfile:
             json.dump(coord, outfile)
             print('coord saved as', file_name)
-        
+
+    def saveas_csv(self, coord, file_name):
+        with open(file_name, 'w') as outfile:
+            csv.writer(outfile).writerows(coord)
+            print('coord saved as', file_name)
+
     def select_point(self,event,x,y,flags,param):
         #if event == cv2.EVENT_LBUTTONDBLCLK:
         if event == cv2.EVENT_LBUTTONDOWN:
@@ -54,7 +60,8 @@ if __name__ == '__main__':
         k = cv2.waitKey() & 0xff
         if k == ord('s'):
             filename = os.path.splitext(os.path.basename(args.vid_source))[0]
-            coord_pts.save_coord(coord_pts.points,  filename + '.json')
+            #coord_pts.saveas_json(coord_pts.points,  filename + '.json')
+            coord_pts.saveas_csv(coord_pts.points,  filename + '.csv')
         if k == 27:
             break
     cap.release()
