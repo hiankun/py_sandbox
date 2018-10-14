@@ -6,6 +6,7 @@ import csv
 import os
 import math
 import time
+#from moviepy.video.io.ffmpeg_reader import FFMPEG_VideoReader
 
 RADIUS = 10
 
@@ -51,6 +52,8 @@ if __name__ == '__main__':
     args = parser.parse_args()
 
     cap = cv2.VideoCapture(args.vid_source)
+    #cap = FFMPEG_VideoReader(args.vid_source)
+    #cap.initialize()
 
     if not cap.isOpened():
         print('Could not open camera or video')
@@ -64,15 +67,21 @@ if __name__ == '__main__':
     cv2.namedWindow("Projectiles", cv2.WINDOW_NORMAL)
     cv2.setMouseCallback('Projectiles', coord_pts.select_point)
 
+    total_frame = int(cap.get(cv2.CAP_PROP_FRAME_COUNT))
+    #total_frame = int(cap.fps * cap.duration)
     frame_num = 0
+
     while True:
-        cap.set(cv2.CAP_PROP_POS_FRAMES,frame_num)
+        cap.set(cv2.CAP_PROP_POS_FRAMES, frame_num)
         ok, frame = cap.read()
         if not ok: break
+        #frame = cap.get_frame((frame_num+1) / cap.fps)
 
+        frame_info = str(frame_num) + '/' +str(total_frame)
+        cv2.putText(frame, frame_info, (100, 50), cv2.FONT_HERSHEY_SIMPLEX, 1.5, (0, 255, 0), 2)
         cv2.imshow("Projectiles", frame)
 
-        k = cv2.waitKey() & 0xff
+        k = cv2.waitKey(0) & 0xff
         if k == ord('s'):
             if coord_pts:
                 filename = os.path.splitext(os.path.basename(args.vid_source))[0] + time.strftime("_%Y%m%d-%H%M%S")
@@ -82,6 +91,8 @@ if __name__ == '__main__':
                 print('Coordinate list is empty...')
         elif k == ord('b'):
             frame_num -= 1
+        elif k == ord('f'):
+            frame_num += 10
         elif k == ord('x'):
             frame_num = 0
             coord_pts.points = []
@@ -89,6 +100,7 @@ if __name__ == '__main__':
         elif k == ord('h'):
             help_str = ("[help message]\ns: save the points\n"
                     "b: step one frame back\n"
+                    "f: step 10 frames forward\n"
                     "x: back to the first frame and clear coord points\n"
                     "Esc: quit\n"
                     "Any other key to step frames forward\n")
