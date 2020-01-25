@@ -11,7 +11,7 @@ sigmaSpace = 5 ## large value will slow down the program dramatically
 
 # Color
 #filtered_color = cv2.resize(frame, (0,0), fx=0.5, fy=0.5)
-filtered_color = cv2.bilateralFilter(filtered_color, -1, sigmaColor, sigmaSpace)
+filtered_color = cv2.bilateralFilter(frame, -1, sigmaColor, sigmaSpace)
 #filtered_color = cv2.resize(filtered_color, (0,0), fx=2, fy=2)
 
 # Sketch
