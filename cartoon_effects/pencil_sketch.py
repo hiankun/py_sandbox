@@ -2,16 +2,16 @@ import numpy as np
 import cv2
 
 
-cap = cv2.VideoCapture(0)
+gray = cv2.imread('/home/thk/Desktop/trump.jpg', cv2.IMREAD_GRAYSCALE)
+ref = cv2.imread('/home/thk/Desktop/pencilSketch.jpg', cv2.IMREAD_GRAYSCALE)
 
-while True:
-  ret, frame = cap.read()
+blurred = cv2.GaussianBlur(gray,(3,3),0,0)
+laplacian = cv2.Laplacian(blurred, cv2.CV_8U, ksize = 5, scale = 1, delta = 0)
+#laplacian = (laplacian*255).astype("uint8")
+#laplacian = cv2.bitwise_not(laplacian)
+_, edges = cv2.threshold(laplacian, 120, 255, cv2.THRESH_BINARY_INV)
 
-  cv2.imshow('frame', frame)
+cv2.imshow('frame', np.hstack((edges, ref)))
+cv2.waitKey(0)
 
-  if cv2.waitKey(1) & 0xFF == ord('q'):
-    break
-
-
-cap.release()
 cv2.destroyAllWindows()
