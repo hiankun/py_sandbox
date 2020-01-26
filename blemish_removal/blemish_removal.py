@@ -3,7 +3,7 @@ import numpy as np
 
 # Lists to store the points
 pts=[]
-source = cv2.imread("/home/thk/Desktop/blemish.png", cv2.IMREAD_COLOR)
+source = cv2.imread("./pics/blemish.png", cv2.IMREAD_COLOR)
 saved_roi = './face.jpg'
 
 class Settings:
@@ -29,6 +29,22 @@ def tile_sub_blocks(sub_blocks ,bsize):
   cv2.imshow('debug: tile sub blocks', blocks_tile)
 
 
+def get_freq():
+  pass
+
+
+def get_gradients(blocks, bsize):
+  #TODO: bug here
+  for i, blk in enumerate(blocks):
+    if blk.shape == (bsize, bsize, 3):
+      blk = cv2.cvtColor(blk, cv2.COLOR_BGR2GRAY)
+      gx = np.mean(cv2.Sobel(blk,cv2.CV_8U,1,0,ksize=3))
+      gy = np.mean(cv2.Sobel(blk,cv2.CV_8U,0,1,ksize=3))
+      print(i, np.sqrt(gx*gx+gy*gy))
+    else:
+      print(i, 'incomplete block with shape of {}'.format(blk.shape))
+
+
 def get_subzones():
   bsize = Settings.block_size
   sub_blocks = [
@@ -37,6 +53,7 @@ def get_subzones():
     for j in range(3)]
 
   #tile_sub_blocks(sub_blocks, bsize)
+  get_gradients(sub_blocks, bsize)
 
 
 def get_roi(action, x, y, flags, userdata):
