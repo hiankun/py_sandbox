@@ -11,21 +11,32 @@ trackbarValue = 'Scale'
 trackbarType = 'Tolerance'
 
 # load an image
-in_vid = './vids/greenscreen-demo.mp4'
+in_vid = './vids/greenscreen-demo-half.mp4'
 
 class Settings:
   pts = []
   patch = None
   frame = None
+  upper = np.array([255,255,255], dtype=np.uint8)
+  lower = np.array([0,0,0], dtype=np.uint8)
 
 
-def get_mask(tol):
-  img = Settings.patch
-  upper = np.array([np.amax(img[:,:,i]) for i in range(3)], dtype=np.uint8)
-  lower = np.array([np.amin(img[:,:,i]) for i in range(3)], dtype=np.uint8)
-  #print(Settings.frame.shape, type(lower), type(upper))
-  mask = cv2.inRange(Settings.frame, lower, upper)
+def get_mask(tol=None):
+  if Settings.patch is not None:
+    img = Settings.patch
+    Settings.upper = np.array([np.amax(img[:,:,i]) for i in range(3)], dtype=np.int16)
+    Settings.lower = np.array([np.amin(img[:,:,i]) for i in range(3)], dtype=np.int16)
+
+  if tol is not None:
+    Settings.upper += tol
+    Settings.upper[Settings.upper>255]=255
+    Settings.lower -= tol
+    Settings.lower[Settings.lower<0]=0
+
+  print(Settings.lower, Settings.upper)
+  mask = cv2.inRange(Settings.frame, Settings.lower, Settings.upper)
   cv2.imshow('mask',mask)
+
 
 def colorPatchSelector(action, x, y, flags, userdata):
   if action==cv2.EVENT_LBUTTONDOWN:
@@ -35,8 +46,11 @@ def colorPatchSelector(action, x, y, flags, userdata):
     [xmin, ymin], [xmax, ymax] = Settings.pts
     Settings.patch = Settings.frame[ymin:ymax,xmin:xmax].copy()
     cv2.imshow('patch', Settings.patch)
-  if action==cv2.EVENT_RBUTTONDOWN: #clear
+    get_mask()
+    Settings.patch = None #reset patch to keep old lower/upper boundaries
+  #if action==cv2.EVENT_RBUTTONDOWN: #clear
     Settings.pts.clear()
+    cv2.waitKey(5000)
     cv2.destroyWindow('patch')
 
 
@@ -52,9 +66,13 @@ def main():
   cap = cv2.VideoCapture(in_vid)
   while True:
     _, Settings.frame = cap.read()
-    Settings.frame = cv2.resize(Settings.frame, None, fx=0.25, fy=0.25)
+    #Settings.frame = cv2.resize(Settings.frame, None, fx=0.25, fy=0.25)
     #Settings.frame = cv2.cvtColor(Settings.frame, cv2.COLOR_BGR2HSV)
     cv2.imshow(windowName, Settings.frame)
+    try:
+      get_mask()
+    except:
+      pass
 
     if cv2.waitKey(0) & 0xFF == ord('q'):
       break
