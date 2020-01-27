@@ -2,7 +2,7 @@ import cv2
 import numpy as np
 
 
-DEBUG = False # set to True to show more debug figures
+DEBUG = True # set to True to show more debug figures
 
 class Settings:
   source = cv2.imread("./pics/blemish.png", cv2.IMREAD_COLOR)
