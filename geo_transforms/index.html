@@ -1,12 +1,22 @@
-<!DOCTYPE HTML>
+<!DOCTYPE html>
 <html>
-<head>
-<meta charset="UTF-8">
-</head>
-<body>
-<h1>Geometric Transforms<h1>
-<canvas id="shapes" width="640" height="480" style="background-color:#CCFFCC"></canvas>
-<button onclick="callDrawPolygon()">Draw Polygon</button>
-<script src="./transforms.js"></script>
-</body>
+  <head>
+    <meta charset="UTF-8">
+    <title>Geometric Transforms</title>
+    <style>
+    input {autocomplete: off;}
+    </style>
+  </head>
+  <body>
+    <canvas id="shapes" width="640" height="480" style="background-color:#CCFFCC"></canvas>
+    <br/>
+    <form id='inputForm' autocomplete="off">
+    Scale X: <input id="scaleX"> Scale Y: <input id="scaleY">
+    <br/>
+    Shear amout: <input id="shearInput">
+    </form>
+    <button onclick="applyTransform()">Apply</button>
+    <button onclick="clearCanvas()">Reset</button>
+    <script src="./transforms.js"></script>
+  </body>
 </html>
