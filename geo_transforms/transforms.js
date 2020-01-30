@@ -2,6 +2,7 @@
 
 var canvas = document.getElementById('shapes');
 var ctx = canvas.getContext('2d');
+
 var corners = [
   {x:10, y:10}, 
   {x:60, y:10}, 
@@ -9,20 +10,10 @@ var corners = [
   {x:10, y:80}
   ];
 
-//drawLabeledDot({x:250, y:100}, 20, "red", "1", "white");
-//drawDot({x:100, y:50}, 10, "green");
-//drawLine(corners[0], corners[1], 3, "white");
-
-
-//var a = [[-2, 3], [2, 4], [3, 6]]
-//var b = [[1, 2, 3], [4, 6, 8]]
-////print(matrixDot(a,b));
-//printMatrix(matrixDot(a,b));
 
 function printMatrix(mat) {
   mat.forEach(m => document.write(`<br/>&nbsp;&nbsp;${m.join(' ')}`)) 
 }
-
 function matrixDot(A, B) {
   /* source:
   https://stackoverflow.com/a/48694670
@@ -36,9 +27,12 @@ function matrixDot(A, B) {
       })
 }
 
-function scaleTransform(scale, pts) {
-  let mat = [ [scale.x, 0, 0],
-              [0, scale.y , 0] ];
+
+function shapeTransform(scaleX, shearX, shiftX,
+                        shearY, scaleY, shiftY,
+                        pts) {
+  let mat = [ [scaleX, shearX, shiftX,],
+              [shearY, scaleY, shiftY,] ];
   let vec = [];
   let transformed = [];
   for (let i=0; i<pts.length; i++) {
@@ -51,29 +45,23 @@ function scaleTransform(scale, pts) {
 
   return transformed
 }
-function shearTransform(shear, pts) {
-  let mat = [ [1, shear, 0],
-              [0, 1 , 0] ];
-  let vec = [];
-  let transformed = [];
-  for (let i=0; i<pts.length; i++) {
-    vec = [ [pts[i].x],
-            [pts[i].y],
-            [1] ];
-    let res = matrixDot(mat, vec)
-    transformed.push({x: res[0], y: res[1]});
-  }
 
-  return transformed
-}
 
 function applyTransform(){
-  let scaleAmount = {x: document.getElementById("scaleX").value,
-                    y: document.getElementById("scaleY").value};
-  let shearAmount = document.getElementById("shearInput").value;
-  let scaled = scaleTransform(scaleAmount, corners);
-  let transformed = shearTransform(shearAmount, scaled);
-  drawPolygon(transformed, 5, "blue");
+  scaleX = document.getElementById("scaleX").value;
+  shearX = document.getElementById("shearX").value;
+  shiftX = document.getElementById("shiftX").value;
+  scaleY = document.getElementById("scaleY").value;
+  shearY = document.getElementById("shearY").value;
+  shiftY = document.getElementById("shiftY").value;
+
+  let transformed = shapeTransform(
+    scaleX, shearX, shiftX,
+    shearY, scaleY, shiftY,
+    corners
+  );
+
+  drawPolygon(transformed, 3, "blue");
 }
 
 function clearCanvas() {

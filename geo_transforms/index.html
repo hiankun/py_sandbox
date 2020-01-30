@@ -4,16 +4,24 @@
     <meta charset="UTF-8">
     <title>Geometric Transforms</title>
     <style>
-    input {autocomplete: off;}
+    input {width: 48px;}
     </style>
   </head>
   <body>
-    <canvas id="shapes" width="640" height="480" style="background-color:#CCFFCC"></canvas>
+    <h1>Geometric Transforms</h1>
+    <canvas id="shapes" width="600" height="400" 
+      style="border:2px solid #29220A; background-color:#F5F6CE">
+      Your browser does not support the HTML5 canvas tag.
+    </canvas>
     <br/>
     <form id='inputForm' autocomplete="off">
-    Scale X: <input id="scaleX"> Scale Y: <input id="scaleY">
+    Scale X: <input id="scaleX" value="1">
+    Shear X: <input id="shearX" value="0">
+    Shift X: <input id="shiftX" value="0">
     <br/>
-    Shear amout: <input id="shearInput">
+    Shear Y: <input id="shearY" value="0">
+    Scale Y: <input id="scaleY" value="1">
+    Shift Y: <input id="shiftY" value="0">
     </form>
     <button onclick="applyTransform()">Apply</button>
     <button onclick="clearCanvas()">Reset</button>
