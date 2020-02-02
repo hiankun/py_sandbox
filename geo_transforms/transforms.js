@@ -1,14 +1,28 @@
 "use strict"
 
-var canvas = document.getElementById('shapes');
+var canvas = document.getElementById('canvas');
 var ctx = canvas.getContext('2d');
-
+ctx.setTransform(1, 0, 0, -1, 0, canvas.height);//flip vertically
+ctx.translate(canvas.width/2, canvas.height/2); //shift origin
+drawCoord();
 var corners = [
-  {x:10, y:10}, 
-  {x:60, y:10}, 
-  {x:60, y:80}, 
-  {x:10, y:80}
+  {x:-30, y:-40}, 
+  {x:30, y:-40}, 
+  {x:30, y:40}, 
+  {x:-30, y:40}
   ];
+drawPolygon(corners, 2, "red");
+
+function drawCoord() {
+  ctx.beginPath();
+  ctx.lineWidth = 1;
+  ctx.strokeStyle = 'white';
+  ctx.moveTo(-canvas.width/2,0);
+  ctx.lineTo(canvas.width/2,0);
+  ctx.moveTo(0,-canvas.height/2);
+  ctx.lineTo(0,canvas.height/2);
+  ctx.stroke();
+}
 
 
 function printMatrix(mat) {
@@ -61,12 +75,14 @@ function applyTransform(){
     corners
   );
 
-  drawPolygon(transformed, 3, "blue");
+  drawPolygon(transformed, 2, "blue");
 }
 
 function clearCanvas() {
-  ctx.clearRect(0, 0, canvas.width, canvas.height);
-  drawPolygon(corners, 3, "red");
+  ctx.clearRect(-canvas.width/2, -canvas.height/2, 
+                 canvas.width,  canvas.height);
+  drawCoord();
+  drawPolygon(corners, 2, "red");
 }
 
 
@@ -84,6 +100,7 @@ function drawPolygon(points, line_width, color) {
 }
 
 
+// the following functions are for test purpose
 function drawDot(center, radius, color) {
   ctx.beginPath();
   ctx.arc(center.x, center.y, radius, 0 , 2 * Math.PI);
