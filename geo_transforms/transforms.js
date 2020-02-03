@@ -42,6 +42,25 @@ function matrixDot(A, B) {
 }
 
 
+function rotateOrig(angle, pts) {
+  let ang = angle * Math.PI / 180.0
+  let mat = [ [Math.cos(ang), -Math.sin(ang), 0.0],
+              [Math.sin(ang),  Math.cos(ang), 0.0] ];
+  let vec = [];
+  let transformed = [];
+  for (let i=0; i<pts.length; i++) {
+    vec = [ [pts[i].x],
+            [pts[i].y],
+            [1] ];
+            
+    let res = matrixDot(mat, vec)
+    transformed.push({x: res[0], y: res[1]});
+  }
+
+  return transformed
+}
+
+
 function shapeTransform(scaleX, shearX, shiftX,
                         shearY, scaleY, shiftY,
                         pts) {
@@ -68,12 +87,15 @@ function applyTransform(){
   scaleY = document.getElementById("scaleY").value;
   shearY = document.getElementById("shearY").value;
   shiftY = document.getElementById("shiftY").value;
+  rotate = document.getElementById("rotate").value;
 
-  let transformed = shapeTransform(
+  let translated = shapeTransform(
     scaleX, shearX, shiftX,
     shearY, scaleY, shiftY,
     corners
   );
+
+  let transformed = rotateOrig(rotate, translated);
 
   drawPolygon(transformed, 2, "blue");
 }
