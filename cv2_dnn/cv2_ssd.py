@@ -1,12 +1,15 @@
-# https://github.com/opencv/opencv/wiki/TensorFlow-Object-Detection-API
+#522v https://github.com/opencv/opencv/wiki/TensorFlow-Object-Detection-API
 import cv2
 import time
+import numpy as np
 
 
-#MODEL = './models/ssd_mobilenet_v2_coco_2018_03_29.pb'
-MODEL = './models/ssd_mobilenet_v2_twice.pb'
-CONFIG = './models/ssd_mobilenet_v2_twice.pbtxt'
-LABEL_FILE = './models/twice_labels.txt'
+MODEL = './models/ssd_mobilenet_v2_coco_2018_03_29.pb'
+CONFIG = './models/ssd_mobilenet_v2_coco_2018_03_29.pbtxt'
+LABEL_FILE = './models/coco_labels.txt'
+#MODEL = './models/ssd_mobilenet_v2_twice.pb'
+#CONFIG = './models/ssd_mobilenet_v2_twice.pbtxt'
+#LABEL_FILE = './models/twice_labels.txt'
 NET = cv2.dnn.readNetFromTensorflow(MODEL, CONFIG)
 try:
   with open(LABEL_FILE) as f:
@@ -36,7 +39,7 @@ def draw_results(img, objects, infer_time=None):
       cv2.putText(img, det_info, (xmin+5,ymin+15), 1, 1.0, (0,0,0), 1)
 
   if infer_time:
-    cv2.rectangle(img, (0,0), (100,20), (0,0,0), -1)
+    #cv2.rectangle(img, (0,0), (100,20), (0,0,0), -1)
     infer_time_info = '{:.2f} FPS'.format(1.0/infer_time)
     cv2.putText(img, infer_time_info, (10,15), 1, 1.0, (255,255,255), 1)
 
@@ -44,10 +47,14 @@ def draw_results(img, objects, infer_time=None):
 
 
 def main():
-  cap = cv2.VideoCapture(0)
+  cap = cv2.VideoCapture(1)
 
   while True:
     _, frame = cap.read()
+    print(frame.dtype, frame.flags)
+    #frame = np.array(frame[:,:,::-1], dtype=np.uint8)
+    frame = frame[:,:,::-1]
+    print(frame.dtype, frame.flags)
   
     infer_start = time.perf_counter()    
     NET.setInput(cv2.dnn.blobFromImage(frame, size=(300, 300), swapRB=True, crop=False))
