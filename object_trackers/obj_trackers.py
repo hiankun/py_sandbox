@@ -52,6 +52,7 @@ def main():
   cv2.setMouseCallback(trackingWindow, targetSelector)
 
   cap = cv2.VideoCapture(0)
+  center = []
  
   while True:
     _, frame = cap.read()
@@ -75,15 +76,21 @@ def main():
  
       # Draw bounding box
       if tracker_status:
-        p1 = (int(bbox[0]), int(bbox[1]))
-        p2 = (int(bbox[0] + bbox[2]), int(bbox[1] + bbox[3]))
-        cv2.rectangle(frame, p1, p2, (0,255,255), 1, 1)
+        x,y,w,h = [int(_) for _ in bbox]
+        if len(center) > 100:
+            center.clear()
+        center.append((x + int(w/2), y + int(h/2)))
+        cv2.rectangle(frame, (x,y), (x+w,y+h), (0,255,255), 1, 1)
+        for i, c in enumerate(center):
+            cv2.circle(frame, c, 2, (2*i,255-2*i,255-2*i), -1)
       else :
         cv2.putText(frame, "Tracking failure detected", (100,80), cv2.FONT_HERSHEY_SIMPLEX, 0.5,(0,0,255),2)
  
       cv2.putText(frame, Settings.tracker_type + " Tracker", (20,20), cv2.FONT_HERSHEY_SIMPLEX, 0.5, (0,170,50),2);
       cv2.putText(frame, "FPS : " + str(int(fps)), (20,50), cv2.FONT_HERSHEY_SIMPLEX, 0.5, (0,170,50), 2);
     cv2.imshow(trackingWindow, frame)
+    #filename = './records/frame_{:.3f}.jpg'.format(time.time())
+    #cv2.imwrite(filename, frame)
  
     if cv2.waitKey(1) & 0xff == ord('q') : break
 
