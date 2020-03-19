@@ -1,3 +1,7 @@
+'''
+Use mouse to choose the bg reference zone.
+Then use tolerance to fine tune.
+'''
 import cv2
 import numpy as np
 
@@ -7,7 +11,7 @@ trackbarValue = 'Scale'
 trackbarType = 'Tolerance'
 trackbarMode = 'Mode(0): -tolerance\nMode(1): +tolerance'
 
-# load an image
+# load an image or video as the background
 in_vid = './vids/greenscreen-demo-half.mp4'
 bg_vid = './vids/chaplin_a_thief.mp4'
 bg_file = './pics/twice_bg.jpg'
@@ -43,7 +47,7 @@ def apply_mask(tol=None):
   fg = Settings.fg
   bg_mask = cv2.inRange(fg, Settings.lower, Settings.upper).astype('uint8')
   # refine bg_mask
-  bg_mask = cv2.morphologyEx(bg_mask, cv2.MORPH_OPEN, np.ones((3,3),np.uint8),iterations=11)
+  bg_mask = cv2.morphologyEx(bg_mask, cv2.MORPH_OPEN, np.ones((3,3),np.uint8),iterations=7)
   fg_mask = cv2.bitwise_not(bg_mask)
 
   # apply mask
