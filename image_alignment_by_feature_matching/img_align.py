@@ -5,6 +5,11 @@ import numpy as np
 
 MAX_FEATURES = 20000 # should be big enough
 GOOD_MATCH_PERCENT = 0.02 # should be small
+photos = [
+        'photos/01522v.jpg',
+        'photos/01598v.jpg',
+        'photos/emir.jpg',
+        ]
   
 def split_bgr(img):
   _h, width = img.shape
@@ -52,7 +57,7 @@ def main():
   '''
   Step 1: Preprocessing
   '''
-  img = cv2.imread('./photos/01598v.jpg', cv2.IMREAD_GRAYSCALE)
+  img = cv2.imread(photos[2], cv2.IMREAD_GRAYSCALE)
   blue, green, red = split_bgr(img)
   
   '''
