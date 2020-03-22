@@ -9,23 +9,40 @@ import cv2
 import numpy as np
 
 
-def grabcut():
-    mask = np.zeros(img.shape[:2],np.uint8)
-    bgdmodel = np.zeros((1, 65), np.float64)
-    fgdmodel = np.zeros((1, 65), np.float64)
-    rect = #TODO
-    cv2.grabCut(img2, mask, rect, bgdmodel, fgdmodel, 1, cv2.GC_INIT_WITH_RECT)
-    mask2 = np.where((mask==1) + (mask==3), 255, 0).astype('uint8')
-    output = cv2.bitwise_and(img, img, mask=mask2)
+class DoGrabCut():
+    def __init__(self, *args, **kwargs):
+        self.bgdmodel = np.zeros((1, 65), np.float64)
+        self.fgdmodel = np.zeros((1, 65), np.float64)
+
+    def do_grabcut(self, rect, mode):
+        if mode == 0:
+            self.method = cv2.GC_INIT_WITH_RECT
+        else:
+            self.method = cv2.GC_INIT_WITH_MASK
+        self.img = cv2.imread(Common.img_file)
+        x1,y1,x2,y2 = rect
+        self.rect = [x1, y1, x2-x1, y2-y1]
+        mask = np.zeros(self.img.shape[:2], np.uint8)
+        cv2.grabCut(self.img, mask, self.rect, 
+                self.bgdmodel, self.fgdmodel, 1, self.method)
+        mask2 = np.where((mask==1) + (mask==3), 255, 0).astype('uint8')
+        output = cv2.bitwise_and(self.img, self.img, mask=mask2)
+        res = np.hstack((self.img, output))
+        #cv2.imshow('test', output)
+        #if cv2.waitKey() == ord('q'):
+        #    cv2.destroyAllWindows()
+        return res
 
 
 class Common:
+    grabcut_rect = []
+    grabcut_res = None
     roi_pts = []
     img_file = None
     current_tool = None
     tool_set = [
        ("0:Rectangle", 0),
-       ("1:Curves", 1),
+       ("1:Mask", 1),
        ]
     tool_info = "Key strokes usage\n"\
                +"-----------------\n"\
@@ -47,7 +64,7 @@ class App(tk.Tk):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self.title("GrabCut")
-        self.minsize(1200,900)
+        self.minsize(900,600)
         #self.attributes('-zoomed', True)
         self.columnconfigure(0, weight=1)
         self.rowconfigure(0, weight=1)
@@ -69,13 +86,15 @@ class App(tk.Tk):
 
         self.bind('<g>', self.toggle_cross_guide)
 
+        # the grabCut part
+        self.gc = DoGrabCut(self)
+
     def toggle_cross_guide(self, event='toggle_cross_guide'):
         Draw.set_guding_cross = not Draw.set_guding_cross
         self.imagecanvas.canvas.delete('guiding_cross')
 
     def set_img2canvas(self):
         filename = Common.img_file
-        print(filename)
         self.imagecanvas.show_image(filename)
 
     def set_img2canvas_failed(self):
@@ -171,8 +190,7 @@ class ImageCanvas(tk.Frame):
         self.canvas.bind('<ButtonPress-1>', self.set_points)
         self.canvas.bind_all('<Escape>', self.cancel_set_points)
         self.img_on_canvas = self.canvas.create_image(
-                0,0,image=None,anchor='nw',
-                state=tk.DISABLED)
+                0,0,image=None,anchor='nw', state=tk.DISABLED)
         self.canvas.pack(side='left', fill='both', expand=True)
 
         # Scroll
@@ -187,8 +205,15 @@ class ImageCanvas(tk.Frame):
 
     def key_pressed(self, event='key_pressed'):
         self.kp = event.char
+        if self.kp == 'x':
+            for tag in ['rect', 'temp_rect', 'guiding_cross']:
+                self.canvas.delete(tag)
         if self.kp == 'n':
-            print('do GrabCut')
+            mode = Common.current_tool.get()
+            print('do GrabCut using mode {}'.format(mode))
+            Common.grabcut_res = self.root.gc.do_grabcut(
+                    Common.grabcut_rect, mode=mode)
+            self.show_cv2_image(Common.grabcut_res)
 
     def cursor_move_draw(self, event):
         '''
@@ -210,11 +235,9 @@ class ImageCanvas(tk.Frame):
         if x > w: x = w
         if y > h: y = h
         '''guiding_cross'''
-        # only rect need cursor guide?
         if mode == 0:
             self.canvas.delete('guiding_cross')
             self.canvas.delete('temp_rect')
-            #if x>0 and y>0 and x<w and y<h and Draw.set_guding_cross:
             if Draw.set_guding_cross:
                 self.canvas.create_line(0,y, w,y, x,y, x,0, x,h,
                         tags='guiding_cross', 
@@ -243,7 +266,8 @@ class ImageCanvas(tk.Frame):
         mode = Common.current_tool.get()
         if mode == 0:
             if len(Common.roi_pts) >= 4:
-                self.draw_roi(Common.roi_pts)
+                self.draw_selection(Common.roi_pts)
+                Common.grabcut_rect = [int(_) for _ in Common.roi_pts]
                 Common.roi_pts.clear()
         else:
             Common.roi_pts.clear()
@@ -252,6 +276,12 @@ class ImageCanvas(tk.Frame):
     def cancel_set_points(self, event='cancel_set_points'):
         '''drop the last points from the roi_pts'''
         Common.roi_pts = Common.roi_pts[:-2]
+
+    def show_cv2_image(self, cv2img):
+        pil_img = Image.fromarray(
+                cv2.cvtColor(cv2img, cv2.COLOR_BGR2RGB))
+        self.tk_img = ImageTk.PhotoImage(pil_img) 
+        self.canvas.itemconfig(self.img_on_canvas, image=self.tk_img)
 
     def get_image(self, img_filename, resize=False):
         pil_img = Image.open(img_filename)
@@ -277,7 +307,7 @@ class ImageCanvas(tk.Frame):
         self.canvas.itemconfig(self.img_on_canvas, image=self.img)
         self.canvas.config(scrollregion=(0,0,self.img_w, self.img_h))
 
-    def draw_roi(self, pts):
+    def draw_selection(self, pts):
         mode = Common.current_tool.get()
         if mode == 0:
             roi_id = self.canvas.create_rectangle(pts, tags=('rect'),
