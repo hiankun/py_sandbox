@@ -15,7 +15,7 @@ class DoGrabCut():
         self.fgdmodel = np.zeros((1, 65), np.float64)
 
     def do_grabcut(self, rect, mode):
-        if mode == 0:
+        if mode == 4:
             self.method = cv2.GC_INIT_WITH_RECT
         else:
             self.method = cv2.GC_INIT_WITH_MASK
@@ -35,14 +35,18 @@ class DoGrabCut():
 
 
 class Common:
+    mask = None
     grabcut_rect = []
     grabcut_res = None
     roi_pts = []
     img_file = None
     current_tool = None
     tool_set = [
-       ("0:Rectangle", 0),
-       ("1:Mask", 1),
+       ("Rectangle", 4),
+       ("0: BG", 0),
+       ("1: FG", 1),
+       ("2:PBG", 2),
+       ("3:PFG", 3),
        ]
     tool_info = "Key strokes usage\n"\
                +"-----------------\n"\
@@ -58,6 +62,7 @@ class Draw:
     roi_line_color = '#aacc00'
     roi_line_width = 2
     set_guding_cross = True
+    set_draw_mask = False
 
 
 class App(tk.Tk):
@@ -91,6 +96,7 @@ class App(tk.Tk):
 
     def toggle_cross_guide(self, event='toggle_cross_guide'):
         Draw.set_guding_cross = not Draw.set_guding_cross
+        Draw.set_draw_mask = not Draw.set_draw_mask
         self.imagecanvas.canvas.delete('guiding_cross')
 
     def set_img2canvas(self):
@@ -167,7 +173,7 @@ class ToolPanel(tk.Frame):
         toolpanel_label.pack(side='top',ipadx=0,ipady=5,fill='x')
 
         Common.current_tool = tk.IntVar()
-        Common.current_tool.set(0)
+        Common.current_tool.set(4)
         for text, mode in Common.tool_set:
             self.tool = tk.Radiobutton(self, text=text,
                     variable=Common.current_tool, value=mode)
@@ -187,7 +193,7 @@ class ImageCanvas(tk.Frame):
                 background=Draw.canvas_bg_color, cursor='crosshair')
         self.canvas.bind_all('<Key>', self.key_pressed)
         self.canvas.bind('<Motion>', self.cursor_move_draw)
-        self.canvas.bind('<ButtonPress-1>', self.set_points)
+        self.canvas.bind('<B1-Motion>', self.set_mask)
         self.canvas.bind_all('<Escape>', self.cancel_set_points)
         self.img_on_canvas = self.canvas.create_image(
                 0,0,image=None,anchor='nw', state=tk.DISABLED)
@@ -206,14 +212,18 @@ class ImageCanvas(tk.Frame):
     def key_pressed(self, event='key_pressed'):
         self.kp = event.char
         if self.kp == 'x':
-            for tag in ['rect', 'temp_rect', 'guiding_cross']:
-                self.canvas.delete(tag)
+            self.clear_roi()
+            Common.roi_pts.clear()
         if self.kp == 'n':
             mode = Common.current_tool.get()
             print('do GrabCut using mode {}'.format(mode))
             Common.grabcut_res = self.root.gc.do_grabcut(
                     Common.grabcut_rect, mode=mode)
             self.show_cv2_image(Common.grabcut_res)
+
+    def clear_roi(self):
+        for tag in ['rect', 'temp_rect', 'guiding_cross', 'temp_oval']:
+            self.canvas.delete(tag)
 
     def cursor_move_draw(self, event):
         '''
@@ -235,42 +245,63 @@ class ImageCanvas(tk.Frame):
         if x > w: x = w
         if y > h: y = h
         '''guiding_cross'''
-        if mode == 0:
-            self.canvas.delete('guiding_cross')
-            self.canvas.delete('temp_rect')
+        if mode == 4:
+            for tag in ['guiding_cross', 'temp_rect']:
+                self.canvas.delete(tag)
             if Draw.set_guding_cross:
                 self.canvas.create_line(0,y, w,y, x,y, x,0, x,h,
                         tags='guiding_cross', 
                         fill=Draw.cross_line_color, 
                         width=Draw.cross_line_width)
-            if len(Common.roi_pts) == 2: # only one point has been set
-                _x,_y = Common.roi_pts
-                self.canvas.create_rectangle(_x,_y,x,y, 
-                        tags='temp_rect', 
-                        outline=Draw.roi_line_color, 
-                        width=Draw.roi_line_width)
-        elif mode == 1:
-            pass
-        else:
-            pass
+            #if len(Common.roi_pts) == 2: # only one point has been set
+            #    _x,_y = Common.roi_pts
+            #    self.canvas.create_rectangle(_x,_y,x,y, 
+            #            tags='temp_rect', 
+            #            outline=Draw.roi_line_color, 
+            #            width=Draw.roi_line_width)
 
-    def set_points(self, event):
-        x = self.canvas.canvasx(event.x)
-        y = self.canvas.canvasy(event.y)
+    def set_mask(self, event):
+        try:
+            mode = Common.current_tool.get()
+            x = self.canvas.canvasx(event.x)
+            y = self.canvas.canvasy(event.y)
+            w = self.img_w
+            h = self.img_h
+        except:
+            return
+
         if x < 0: x = 0
         if y < 0: y = 0
-        if x > self.img_w: x = self.img_w
-        if y > self.img_h: y = self.img_h
+        if x > w: x = w
+        if y > h: y = h
+
         Common.roi_pts.extend([x,y])
 
-        mode = Common.current_tool.get()
-        if mode == 0:
+        if mode == 4:
             if len(Common.roi_pts) >= 4:
-                self.draw_selection(Common.roi_pts)
-                Common.grabcut_rect = [int(_) for _ in Common.roi_pts]
-                Common.roi_pts.clear()
+                self.canvas.delete('rect')
+                _id = self.canvas.create_rectangle(Common.roi_pts,
+                        tags=('rect'),
+                        outline=Draw.roi_line_color, 
+                        width=Draw.roi_line_width, 
+                        )
+                # Use coords to transform any rect corners to the format of
+                # (xmin,ymin,xmax,ymax)
+                Common.grabcut_rect = [int(_) for _ in self.canvas.coords(_id)]
+            # Keep the start point
+            Common.roi_pts = Common.roi_pts[:2]
+        elif mode == 0:
+            r = 3
+            self.canvas.create_oval(x-r,y-r,x+r,y+r, tags='oval-0',
+                fill=Draw.roi_line_color, width=0)
+            print(x,y, len(Common.roi_pts))
+        elif mode == 1:
+            pass
+        elif mode == 2:
+            pass
+        elif mode == 3:
+            pass
         else:
-            Common.roi_pts.clear()
             pass
 
     def cancel_set_points(self, event='cancel_set_points'):
@@ -306,15 +337,6 @@ class ImageCanvas(tk.Frame):
         self.img = self.get_image(img_filename)
         self.canvas.itemconfig(self.img_on_canvas, image=self.img)
         self.canvas.config(scrollregion=(0,0,self.img_w, self.img_h))
-
-    def draw_selection(self, pts):
-        mode = Common.current_tool.get()
-        if mode == 0:
-            roi_id = self.canvas.create_rectangle(pts, tags=('rect'),
-                    outline=Draw.roi_line_color, width=Draw.roi_line_width, 
-                    )
-        elif mode == 1:
-            pass
 
 
 if __name__ == '__main__':
