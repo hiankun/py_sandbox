@@ -1,3 +1,6 @@
+# NOTE: It seems that Google has changed something and the `ImageSoup` doesn't
+work now.
+
 ### [For users]
 
 The script uses [rafpyprog/ImageSoup](https://github.com/rafpyprog/ImageSoup) as the core function to download images from Google Images.
