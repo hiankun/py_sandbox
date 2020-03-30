@@ -1,9 +1,9 @@
-#522v https://github.com/opencv/opencv/wiki/TensorFlow-Object-Detection-API
+#https://github.com/opencv/opencv/wiki/TensorFlow-Object-Detection-API
 import cv2
 import time
 import numpy as np
 
-
+src = 1 #'/home/thk/Downloads/soccer-ball.mp4'
 MODEL = './models/ssd_mobilenet_v2_coco_2018_03_29.pb'
 CONFIG = './models/ssd_mobilenet_v2_coco_2018_03_29.pbtxt'
 LABEL_FILE = './models/coco_labels.txt'
@@ -47,14 +47,16 @@ def draw_results(img, objects, infer_time=None):
 
 
 def main():
-  cap = cv2.VideoCapture(1)
+  cap = cv2.VideoCapture(src)
 
   while True:
     _, frame = cap.read()
-    print(frame.dtype, frame.flags)
+
+    # The following code was used to test the CONTIGUOUS
+    #print(frame.dtype, frame.flags)
     #frame = np.array(frame[:,:,::-1], dtype=np.uint8)
-    frame = frame[:,:,::-1]
-    print(frame.dtype, frame.flags)
+    #frame = frame[:,:,::-1]
+    #print(frame.dtype, frame.flags)
   
     infer_start = time.perf_counter()    
     NET.setInput(cv2.dnn.blobFromImage(frame, size=(300, 300), swapRB=True, crop=False))

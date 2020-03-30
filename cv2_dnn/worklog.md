@@ -25,5 +25,6 @@ export LD_PRELOAD=/usr/lib/arm-linux-gnueabihf/libatomic.so.1.2.0
 
 # TODO
 
-Install headless version of Buster and OpenCV.
+* Install headless version of Buster and OpenCV.
+* Try YOLOv3.
 
