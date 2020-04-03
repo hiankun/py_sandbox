@@ -1,6 +1,7 @@
 import os
 import cv2
 import numpy as np
+import argparse
 from glob import glob
 import itertools
 from tqdm import tqdm
@@ -10,16 +11,33 @@ import multiprocessing as MP
 manager = MP.Manager()
 MP_idendical_list = manager.list()
 
+def get_hist_similarity(img1, img2):
+  hist1 = cv2.calcHist([img1], [0, 1, 2], None, [8, 8, 8],
+    [0, 256, 0, 256, 0, 256])
+  hist1= cv2.normalize(hist1, hist1).flatten()
+  
+  hist2 = cv2.calcHist([img2], [0, 1, 2], None, [8, 8, 8],
+    [0, 256, 0, 256, 0, 256])
+  hist2= cv2.normalize(hist2, hist2).flatten()
+  
+  return cv2.compareHist(hist1, hist2, cv2.HISTCMP_CORREL)
+  
 def is_identical(files):
   f1, f2 = files
   img1 = cv2.imread(f1, cv2.IMREAD_UNCHANGED)
   img2 = cv2.imread(f2, cv2.IMREAD_UNCHANGED)
-  gray1 = cv2.cvtColor(img1, cv2.COLOR_BGR2GRAY)
-  gray2 = cv2.cvtColor(img2, cv2.COLOR_BGR2GRAY)
-  identical = (gray1.shape == gray2.shape and 
-      not(np.bitwise_xor(gray1,gray2).any()))
+  similarity = get_hist_similarity(img1, img2)
+  identical = True if similarity > 0.95 else False
   if identical:
-    MP_idendical_list.append((f1,f2))
+    MP_idendical_list.append(
+            (os.path.basename(f1), os.path.basename(f2)))
+  #print('{}: {} <--> {}'.format(get_hist_similarity(img1, img2), f1, f2))
+  #gray1 = cv2.cvtColor(img1, cv2.COLOR_BGR2GRAY)
+  #gray2 = cv2.cvtColor(img2, cv2.COLOR_BGR2GRAY)
+  #identical = (gray1.shape == gray2.shape and 
+  #    not(np.bitwise_xor(gray1,gray2).any()))
+  #if identical:
+  #  MP_idendical_list.append((f1,f2))
 
 
 def clean_duplicated(files_list):
@@ -58,7 +76,12 @@ def clean_duplicated(files_list):
 
 
 def main():
-  files_list = glob('./pics/*.*')
+  parser = argparse.ArgumentParser()
+  parser.add_argument('-f', '--folder', required=True,
+          help='path to the folder of input images')
+  args = parser.parse_args()
+
+  files_list = glob(os.path.join(args.folder, '*.*'))
   process_len = sum(1 for _ in itertools.combinations(files_list, 2))
 
   # set None to use the number returned by cpu_count()
@@ -69,7 +92,8 @@ def main():
         pbar.update()
 
   idendical_list = clean_duplicated(MP_idendical_list)
-  print(idendical_list) #TODO: write to file
+  for _, f in enumerate(idendical_list):
+    print(_, sorted(f)) #TODO: write to file
 
 
 if __name__=='__main__':
