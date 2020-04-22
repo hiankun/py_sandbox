@@ -40,7 +40,7 @@ def is_identical(files):
         MP_idendical_list.append((f1,f2))
 
 
-def is_similar(files, threshold=0.95):
+def is_similar(files, threshold=0.96):
     """ Find similar images.
     The threshold sould be set in the range of [0,1].
     Higher threshold means higher similarity.
