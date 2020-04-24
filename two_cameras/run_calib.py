@@ -22,13 +22,15 @@ images = glob.glob('./frames/*.jpeg')
 
 for fname in images:
     img = cv2.imread(fname)
+    #img = cv2.flip(img, 0)
     if _img_shape == None:
         _img_shape = img.shape[:2]
     else:
         assert _img_shape == img.shape[:2], "All images must share the same size."
     gray = cv2.cvtColor(img,cv2.COLOR_BGR2GRAY)
     # Find the chess board corners
-    ret, corners = cv2.findChessboardCorners(gray, CHECKERBOARD, cv2.CALIB_CB_ADAPTIVE_THRESH+cv2.CALIB_CB_FAST_CHECK+cv2.CALIB_CB_NORMALIZE_IMAGE)
+    ret, corners = cv2.findChessboardCorners(gray, CHECKERBOARD, 
+            cv2.CALIB_CB_ADAPTIVE_THRESH+cv2.CALIB_CB_FAST_CHECK+cv2.CALIB_CB_NORMALIZE_IMAGE)
     # If found, add object points, image points (after refining them)
     if ret == True:
         objpoints.append(objp)
