@@ -16,7 +16,7 @@ window = pyglet.window.Window(width=600,height=600)
 
 fps_display = pyglet.window.FPSDisplay(window)
 
-logo_img = pyglet.resource.image('pymunk_logo_googlecode.png')
+logo_img = pyglet.resource.image('sp01_01.png')
 logo_img.anchor_x = logo_img.width/2
 logo_img.anchor_y = logo_img.height/2
 logos = []
@@ -84,7 +84,8 @@ def spawn_logo(dt):
     x = random.randint(20,400)
     y = 500
     angle = random.random() * math.pi
-    vs = [(-23,26), (23,26), (0,-26)]
+    #vs = [(-23,26), (23,26), (0,-26)]
+    vs = [(-23,26), (23,26), (23,-26), (-23,-26)]
     mass = 10
     moment = pymunk.moment_for_poly(mass, vs)
     body = pymunk.Body(mass, moment)
