@@ -12,7 +12,7 @@ import pyglet
 import pymunk
 from pymunk import Vec2d
 
-window = pyglet.window.Window(width=600,height=600)
+window = pyglet.window.Window(width=1024,height=768)
 
 fps_display = pyglet.window.FPSDisplay(window)
 
@@ -85,7 +85,11 @@ def spawn_logo(dt):
     y = 500
     angle = random.random() * math.pi
     #vs = [(-23,26), (23,26), (0,-26)]
-    vs = [(-23,26), (23,26), (23,-26), (-23,-26)]
+    w1 = 75
+    w2 = 10
+    w3 = 30
+    h = 15
+    vs = [(-w1,0), (-w3,h), (w2,h), (w1,0), (w2,-h), (-w3,-h)]
     mass = 10
     moment = pymunk.moment_for_poly(mass, vs)
     body = pymunk.Body(mass, moment)
