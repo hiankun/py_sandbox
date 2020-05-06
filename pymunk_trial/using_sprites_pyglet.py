@@ -6,11 +6,13 @@ __version__ = "$Id:$"
 __docformat__ = "reStructuredText"
 
 import math, random
+import sys
 
 import pyglet
 
 import pymunk
-from pymunk import Vec2d
+from pymunk import Vec2d, BB
+import pymunk.autogeometry
 
 window = pyglet.window.Window(width=1024,height=768)
 
@@ -24,20 +26,43 @@ batch = pyglet.graphics.Batch()
 
 ### Physics stuff
 space = pymunk.Space()
-space.gravity = Vec2d(0.0, -900.0)
+space.gravity = Vec2d(0.0, -90.0)
 
 ### Static line
-static_lines = [pymunk.Segment(space.static_body, (11.0, 280.0), (407.0, 246.0), 0.0)
-                ,pymunk.Segment(space.static_body, (407.0, 246.0), (407.0, 343.0), 0.0)
+static_lines = [
+        pymunk.Segment(space.static_body, (11.0, 280.0), (407.0, 246.0), 0.0),
+        pymunk.Segment(space.static_body, (407.0, 246.0), (407.0, 343.0), 0.0)
                 ]
+#shore_vs = [
+#        (13 ,188),
+#        (121 ,71),
+#        (233 ,62),
+#        (331 ,23),
+#        (544 ,155),
+#        (733 ,107),
+#        (886 ,162),
+#        (951 ,308),
+#        (1017 ,351)
+#        ]
+
 for l in static_lines:
     l.friction = 0.5
 space.add(static_lines)
 
 @window.event
+def on_mouse_press(x, y, button, modifiers):
+    if button == pyglet.window.mouse.LEFT:
+        print(x,y)
+
+@window.event
 def on_key_press(symbol, modifiers):
     if symbol == pyglet.window.key.P:
-        pyglet.image.get_buffer_manager().get_color_buffer().save('using_sprites_pyglet.png')
+        print('screenshot saved...')
+        pyglet.image.get_buffer_manager().get_color_buffer().save(
+                'save_using_sprites_pyglet.png')
+    if symbol == pyglet.window.key.G:
+        print('generate geometry...')
+        generate_geometry(terrain_surface, space)
 
 @window.event
 def on_draw():
@@ -94,7 +119,7 @@ def spawn_logo(dt):
     moment = pymunk.moment_for_poly(mass, vs)
     body = pymunk.Body(mass, moment)
     shape = pymunk.Poly(body, vs)
-    shape.friction = 0.5
+    shape.friction = 2.0
     body.position = x, y
     body.angle = angle
     
@@ -105,8 +130,45 @@ def spawn_logo(dt):
     sprite.body = body
     logos.append(sprite) 
     
-pyglet.clock.schedule_interval(update, 1/60.)
-pyglet.clock.schedule_once(spawn_logo, .1)
-pyglet.clock.schedule_interval(spawn_logo, 10/6.)
-pyglet.app.run()
+def generate_geometry(surface, space):
+    for s in space.shapes:
+        if hasattr(s, "generated") and s.generated:
+            space.remove(s)
 
+    def sample_func(point):
+        try:
+            p = int(point.x), int(point.y)
+            color = surface.get_at(p)
+            return color.hsla[2] # use lightness
+        except:
+            return 0 
+
+    line_set = pymunk.autogeometry.PolylineSet()
+    def segment_func(v0, v1):
+        line_set.collect_segment(v0, v1)
+    
+    pymunk.autogeometry.march_soft(
+        BB(0,0,599,599), 60, 60, 90, segment_func, sample_func)
+
+    for polyline in line_set:
+        line = pymunk.autogeometry.simplify_curves(polyline, 1.)
+
+        for i in range(len(line)-1):
+            p1 = line[i]
+            p2 = line[i+1]
+            shape = pymunk.Segment(space.static_body, p1, p2, 1)
+            shape.friction = .5
+            shape.color = pygame.color.THECOLORS["red"]
+            shape.generated = True
+            space.add(shape) 
+
+
+def main():
+    pyglet.clock.schedule_interval(update, 1/60.)
+    pyglet.clock.schedule_once(spawn_logo, .1)
+    pyglet.clock.schedule_interval(spawn_logo, 10/6.)
+    pyglet.app.run()
+
+
+if __name__ == '__main__':
+    sys.exit(main())
