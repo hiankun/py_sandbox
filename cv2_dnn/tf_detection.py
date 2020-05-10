@@ -3,14 +3,24 @@ import cv2
 import time
 import numpy as np
 
-src = 1 #'/home/thk/Downloads/soccer-ball.mp4'
-MODEL = './models/ssd_mobilenet_v2_coco_2018_03_29.pb'
-CONFIG = './models/ssd_mobilenet_v2_coco_2018_03_29.pbtxt'
+src = 0 #'/home/thk/Downloads/soccer-ball.mp4'
+#MODEL = './models/ssd_mobilenet_v2_coco_2018_03_29.pb'
+#CONFIG = './models/ssd_mobilenet_v2_coco_2018_03_29.pbtxt'
+#MODEL = '/home/thk/Downloads/ssd_inception_v2_coco_2018_01_28/frozen_inference_graph.pb'
+#CONFIG = '/home/thk/Downloads/ssd_inception_v2_coco_2018_01_28/frozen_inference_graph.pbtxt'
+#MODEL = '/home/thk/Downloads/faster_rcnn_inception_v2_coco_2018_01_28/frozen_inference_graph.pb'
+#CONFIG = '/home/thk/Downloads/faster_rcnn_inception_v2_coco_2018_01_28/frozen_inference_graph.pbtxt'
+#LABEL_FILE = './models/coco_labels.txt'
+MODEL = '/home/thk/Downloads/faster_rcnn_resnet50_coco_2018_01_28/frozen_inference_graph.pb'
+CONFIG = '/home/thk/Downloads/faster_rcnn_resnet50_coco_2018_01_28/frozen_inference_graph.pbtxt'
 LABEL_FILE = './models/coco_labels.txt'
 #MODEL = './models/ssd_mobilenet_v2_twice.pb'
 #CONFIG = './models/ssd_mobilenet_v2_twice.pbtxt'
 #LABEL_FILE = './models/twice_labels.txt'
 NET = cv2.dnn.readNetFromTensorflow(MODEL, CONFIG)
+NET.setPreferableBackend(cv2.dnn.DNN_BACKEND_CUDA)
+NET.setPreferableTarget(cv2.dnn.DNN_TARGET_CUDA)
+
 try:
   with open(LABEL_FILE) as f:
     LABELS = [line.rstrip() for line in f]
@@ -29,7 +39,7 @@ def draw_results(img, objects, infer_time=None):
       ymax = int(obj[6] * height)
       cv2.rectangle(img, (xmin,ymin), (xmax,ymax), (0,255,255), 1)
       if LABELS:
-        label = LABELS[int(obj[1])]
+        label = LABELS[int(obj[1])+1]
         text_w = 110
       else:
         label = int(obj[1])
