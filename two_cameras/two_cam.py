@@ -6,8 +6,8 @@ from datetime import datetime
 ROOT_PATH = './records/'
 REC = False
 
-WIDTH = 1920
-HEIGHT = 1080
+WIDTH = 1920 #1024
+HEIGHT = 1080 #576
 
 def main():
   global REC
