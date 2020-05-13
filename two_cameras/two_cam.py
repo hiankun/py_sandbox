@@ -11,8 +11,13 @@ def main():
   '''
   The left/right is determined by facing the target
   '''
-  cam_1 = cv2.VideoCapture(1) #left-half screen
+  cam_1 = cv2.VideoCapture(0) #left-half screen
   cam_2 = cv2.VideoCapture(2) #right-half screen
+
+  #cam_1.set(3, 1024)
+  #cam_1.set(4, 576)
+  #cam_2.set(3, 1024)
+  #cam_2.set(4, 576)
 
   while True:
     _, frame_1 = cam_1.read()
@@ -21,8 +26,8 @@ def main():
     #frame_1 = cv2.flip(frame_1, 0)
     #frame_2 = cv2.flip(frame_2, 0)
 
-    frame_1 = cv2.rotate(frame_1, cv2.ROTATE_90_COUNTERCLOCKWISE)
-    frame_2 = cv2.rotate(frame_2, cv2.ROTATE_90_CLOCKWISE)
+    #frame_1 = cv2.rotate(frame_1, cv2.ROTATE_90_COUNTERCLOCKWISE)
+    #frame_2 = cv2.rotate(frame_2, cv2.ROTATE_90_CLOCKWISE)
 
     res = np.hstack((frame_1, frame_2))
         #(np.rot90(frame_1,k=-1), np.rot90(frame_2,k=1)))
