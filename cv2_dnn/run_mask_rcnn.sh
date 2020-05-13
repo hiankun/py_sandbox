@@ -1,5 +1,5 @@
 WORK_PATH="/home/thk/Downloads/mask_rcnn_inception_v2_coco_2018_01_28/"
-python mask_rcnn.py \
+python3 mask_rcnn.py \
 	--model ${WORK_PATH}frozen_inference_graph.pb \
 	--config ${WORK_PATH}frozen_inference_graph.pbtxt \
 	--classes models/coco_labels.txt \

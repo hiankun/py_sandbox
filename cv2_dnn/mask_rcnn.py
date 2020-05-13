@@ -70,7 +70,9 @@ def drawBox(frame, classId, conf, left, top, right, bottom):
 
 # Load a network
 net = cv.dnn.readNet(cv.samples.findFile(args.model), cv.samples.findFile(args.config))
-net.setPreferableBackend(cv.dnn.DNN_BACKEND_OPENCV)
+#net.setPreferableBackend(cv.dnn.DNN_BACKEND_OPENCV)
+net.setPreferableBackend(cv.dnn.DNN_BACKEND_CUDA)
+net.setPreferableTarget(cv.dnn.DNN_TARGET_CUDA)
 
 winName = 'Mask-RCNN in OpenCV'
 cv.namedWindow(winName, cv.WINDOW_NORMAL)
