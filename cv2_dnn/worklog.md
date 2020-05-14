@@ -29,6 +29,7 @@ export LD_PRELOAD=/usr/lib/arm-linux-gnueabihf/libatomic.so.1.2.0
 * Try YOLOv3.
 
 # Install OpenCV with GPU functions
+[2020-05-11]
 
 * Follow the instruction of [How to use OpenCV’s “dnn” module with NVIDIA GPUs, CUDA, and cuDNN](
 https://www.pyimagesearch.com/2020/02/03/how-to-use-opencvs-dnn-module-with-nvidia-gpus-cuda-and-cudnn/)
