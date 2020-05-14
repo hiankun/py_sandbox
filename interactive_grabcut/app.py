@@ -53,6 +53,7 @@ class Common:
                +"Esc: Cancel points\n"\
                +"g: Toggle guiding\n"\
                +"   cross on/off\n"\
+               +"n: Do GrabCut\n"\
                +"-----------------"
 
 class Draw:
