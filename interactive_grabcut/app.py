@@ -4,7 +4,7 @@ from tkinter.filedialog import (
         asksaveasfile,
         askopenfilename)
 from tkinter import messagebox
-from PIL import Image, ImageTk
+from PIL import Image, ImageDraw, ImageTk
 import cv2
 import numpy as np
 
@@ -14,20 +14,23 @@ class DoGrabCut():
         self.bgdmodel = np.zeros((1, 65), np.float64)
         self.fgdmodel = np.zeros((1, 65), np.float64)
 
-    def do_grabcut(self, rect, mode):
+    def do_grabcut(self, mode, rect=None, fine_mask=None):
+        self.img = cv2.imread(Common.img_file)
         if mode == 4:
             self.method = cv2.GC_INIT_WITH_RECT
+            x1,y1,x2,y2 = rect
+            self.rect = [x1, y1, x2-x1, y2-y1]
+            mask = np.zeros(self.img.shape[:2], np.uint8)
         else:
             self.method = cv2.GC_INIT_WITH_MASK
-        self.img = cv2.imread(Common.img_file)
-        x1,y1,x2,y2 = rect
-        self.rect = [x1, y1, x2-x1, y2-y1]
-        mask = np.zeros(self.img.shape[:2], np.uint8)
-        cv2.grabCut(self.img, mask, self.rect, 
+            mask = fine_mask
+            self.rect = None #[0,0,500,500]
+        mask, _, _ = cv2.grabCut(self.img, mask, self.rect, 
                 self.bgdmodel, self.fgdmodel, 1, self.method)
         mask2 = np.where((mask==1) + (mask==3), 255, 0).astype('uint8')
         output = cv2.bitwise_and(self.img, self.img, mask=mask2)
-        res = np.hstack((self.img, output))
+        #res = np.hstack((self.img, output))
+        res = np.hstack((self.img, cv2.merge((mask2,mask2,mask2))))
         #cv2.imshow('test', output)
         #if cv2.waitKey() == ord('q'):
         #    cv2.destroyAllWindows()
@@ -37,6 +40,7 @@ class DoGrabCut():
 class Common:
     mask = None
     grabcut_rect = []
+    grabcut_mask = []
     grabcut_res = None
     roi_pts = []
     img_file = None
@@ -62,6 +66,8 @@ class Draw:
     cross_line_width = 1
     roi_line_color = '#aacc00'
     roi_line_width = 2
+    fg_mask_color = '#ffffff'
+    bg_mask_color = '#000000'
     set_guding_cross = True
     set_draw_mask = False
 
@@ -210,6 +216,9 @@ class ImageCanvas(tk.Frame):
         self.canvas.config(xscrollcommand=self.hbar.set, 
                 yscrollcommand=self.vbar.set)
 
+        # Mask
+        self.mask_img = None
+
     def key_pressed(self, event='key_pressed'):
         self.kp = event.char
         if self.kp == 'x':
@@ -219,11 +228,14 @@ class ImageCanvas(tk.Frame):
             mode = Common.current_tool.get()
             print('do GrabCut using mode {}'.format(mode))
             Common.grabcut_res = self.root.gc.do_grabcut(
-                    Common.grabcut_rect, mode=mode)
+                    mode=mode,
+                    rect=Common.grabcut_rect, 
+                    fine_mask=Common.grabcut_mask)
             self.show_cv2_image(Common.grabcut_res)
 
     def clear_roi(self):
-        for tag in ['rect', 'temp_rect', 'guiding_cross', 'temp_oval']:
+        #for tag in ['rect', 'temp_rect', 'guiding_cross', 'temp_oval']:
+        for tag in ['rect', 'temp_rect', 'guiding_cross', 'oval_0']:
             self.canvas.delete(tag)
 
     def cursor_move_draw(self, event):
@@ -279,7 +291,10 @@ class ImageCanvas(tk.Frame):
         Common.roi_pts.extend([x,y])
 
         if mode == 4:
-            if len(Common.roi_pts) >= 4:
+            if len(Common.roi_pts) > 4:
+                Common.roi_pts.clear()
+                #Common.roi_pts = Common.roi_pts[-2:]
+            if len(Common.roi_pts) == 4:
                 self.canvas.delete('rect')
                 _id = self.canvas.create_rectangle(Common.roi_pts,
                         tags=('rect'),
@@ -289,13 +304,24 @@ class ImageCanvas(tk.Frame):
                 # Use coords to transform any rect corners to the format of
                 # (xmin,ymin,xmax,ymax)
                 Common.grabcut_rect = [int(_) for _ in self.canvas.coords(_id)]
-            # Keep the start point
+            # Keep only the starting point
             Common.roi_pts = Common.roi_pts[:2]
         elif mode == 0:
             r = 3
-            self.canvas.create_oval(x-r,y-r,x+r,y+r, tags='oval-0',
-                fill=Draw.roi_line_color, width=0)
-            print(x,y, len(Common.roi_pts))
+            self.canvas.create_oval(x-r,y-r,x+r,y+r, tags='oval_0',
+                fill=Draw.bg_mask_color, width=0)
+            #print(x,y, len(Common.roi_pts))
+            if len(Common.roi_pts) <= 2:
+                # Create mask with fg values (color=1)
+                self.mask_img = Image.new(mode='L', size=(w,h), color=1)
+            else:
+                _mask_draw = ImageDraw.Draw(self.mask_img)
+                _mask_draw.ellipse([x-r,y-r,x+r,y+r], fill=0)
+                #self.mask_img.save('tmp_mask.jpg')
+                _mask = np.array(self.mask_img, dtype=np.uint8)
+                #print(type(_mask), _mask.shape)
+                #print([_mask == 0])
+                Common.grabcut_mask = _mask
         elif mode == 1:
             pass
         elif mode == 2:
