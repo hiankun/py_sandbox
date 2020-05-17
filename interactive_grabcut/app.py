@@ -15,6 +15,7 @@ class DoGrabCut():
         self.fgdmodel = np.zeros((1, 65), np.float64)
 
     def do_grabcut(self, mode, rect=None, fine_mask=None):
+        Common.polygon = []
         self.img = cv2.imread(Common.img_file)
         if mode == 4:
             self.method = cv2.GC_INIT_WITH_RECT
@@ -27,17 +28,15 @@ class DoGrabCut():
         cv2.grabCut(self.img, Common.mask, self.rect, 
                 self.bgdmodel, self.fgdmodel, 1, self.method)
         res_mask = np.where((Common.mask==1) + (Common.mask==3), 255, 0).astype('uint8')
-        polygon = self.get_polygon(res_mask)
-        print(polygon)
+        Common.polygon = self.get_polygon(res_mask)
         output = cv2.bitwise_and(self.img, self.img, mask=res_mask)
         res = np.hstack((self.img, output))
         return res
 
     def get_polygon(self, mask):
-        bw = np.where(mask==255, 255, 0).astype(np.uint8)
-        cnts, _ = cv2.findContours(bw, cv2.RETR_TREE, cv2.CHAIN_APPROX_SIMPLE)
+        cnts, _ = cv2.findContours(mask, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
         for cnt in cnts:
-            epsilon = 0.001*cv2.arcLength(cnt, True)
+            epsilon = 0.002*cv2.arcLength(cnt, True)
             approx = cv2.approxPolyDP(cnt, epsilon, True)
             approx = np.squeeze(approx, axis=1)
         # append the first point to the end
@@ -48,6 +47,7 @@ class DoGrabCut():
 
 class Common:
     mask = None
+    polygon = []
     grabcut_rect = []
     grabcut_mask = []
     grabcut_res = None
@@ -67,6 +67,7 @@ class Common:
                +"g: Toggle guiding\n"\
                +"   cross on/off\n"\
                +"n: Do GrabCut\n"\
+               +"p: Draw polygon\n"\
                +"-----------------"
 
 class Draw:
@@ -231,6 +232,8 @@ class ImageCanvas(tk.Frame):
 
     def key_pressed(self, event='key_pressed'):
         self.kp = event.char
+        if self.kp == 'p':
+            self.draw_poly()
         if self.kp == 'x':
             self.clear_roi()
             Common.roi_pts.clear()
@@ -244,9 +247,14 @@ class ImageCanvas(tk.Frame):
             self.show_cv2_image(Common.grabcut_res)
 
     def clear_roi(self):
-        #for tag in ['rect', 'temp_rect', 'guiding_cross', 'temp_oval']:
-        for tag in ['rect', 'temp_rect', 'guiding_cross', 'oval_0']:
+        for tag in ['rect', 'temp_rect', 'guiding_cross', 'oval_0', 'poly']:
             self.canvas.delete(tag)
+
+    def draw_poly(self):
+        self.canvas.delete('poly')
+        pts = [int(_) for _ in Common.polygon.flatten()]
+        #print(pts)
+        self.canvas.create_polygon(pts, tags='poly', outline='blue', width=1, fill='')
 
     def cursor_move_draw(self, event):
         '''
