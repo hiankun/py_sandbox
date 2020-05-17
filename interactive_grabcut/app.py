@@ -23,18 +23,27 @@ class DoGrabCut():
             Common.mask = np.zeros(self.img.shape[:2], np.uint8)
         else:
             self.method = cv2.GC_INIT_WITH_MASK
-            #Common.mask = fine_mask
-            self.rect = None #[0,0,500,500]
+            self.rect = None
         cv2.grabCut(self.img, Common.mask, self.rect, 
                 self.bgdmodel, self.fgdmodel, 1, self.method)
-        mask2 = np.where((Common.mask==1) + (Common.mask==3), 255, 0).astype('uint8')
-        output = cv2.bitwise_and(self.img, self.img, mask=mask2)
-        #res = np.hstack((self.img, output))
-        res = np.hstack((self.img, cv2.merge((mask2,mask2,mask2))))
-        #cv2.imshow('test', output)
-        #if cv2.waitKey() == ord('q'):
-        #    cv2.destroyAllWindows()
+        res_mask = np.where((Common.mask==1) + (Common.mask==3), 255, 0).astype('uint8')
+        polygon = self.get_polygon(res_mask)
+        print(polygon)
+        output = cv2.bitwise_and(self.img, self.img, mask=res_mask)
+        res = np.hstack((self.img, output))
         return res
+
+    def get_polygon(self, mask):
+        bw = np.where(mask==255, 255, 0).astype(np.uint8)
+        cnts, _ = cv2.findContours(bw, cv2.RETR_TREE, cv2.CHAIN_APPROX_SIMPLE)
+        for cnt in cnts:
+            epsilon = 0.001*cv2.arcLength(cnt, True)
+            approx = cv2.approxPolyDP(cnt, epsilon, True)
+            approx = np.squeeze(approx, axis=1)
+        # append the first point to the end
+        #area = cv2.contourArea(approx)
+        approx = np.append(approx, [approx[0]], axis=0)
+        return approx #, area
 
 
 class Common:
@@ -66,10 +75,12 @@ class Draw:
     cross_line_width = 1
     roi_line_color = '#aacc00'
     roi_line_width = 2
-    fg_mask_color = '#ffffff'
-    bg_mask_color = '#000000'
+    brush_size = 3
+    mask_BG = {'color' : '#ff0000',  'val' : 0}
+    mask_FG = {'color' : '#00ff00',  'val' : 1}
+    mask_PR_BG = {'color' : '#ff9933',  'val' : 2}
+    mask_PR_FG = {'color' : '#66ff66',  'val' : 3}
     set_guding_cross = True
-    set_draw_mask = False
 
 
 class App(tk.Tk):
@@ -103,7 +114,6 @@ class App(tk.Tk):
 
     def toggle_cross_guide(self, event='toggle_cross_guide'):
         Draw.set_guding_cross = not Draw.set_guding_cross
-        Draw.set_draw_mask = not Draw.set_draw_mask
         self.imagecanvas.canvas.delete('guiding_cross')
 
     def set_img2canvas(self):
@@ -266,12 +276,6 @@ class ImageCanvas(tk.Frame):
                         tags='guiding_cross', 
                         fill=Draw.cross_line_color, 
                         width=Draw.cross_line_width)
-            #if len(Common.roi_pts) == 2: # only one point has been set
-            #    _x,_y = Common.roi_pts
-            #    self.canvas.create_rectangle(_x,_y,x,y, 
-            #            tags='temp_rect', 
-            #            outline=Draw.roi_line_color, 
-            #            width=Draw.roi_line_width)
 
     def set_mask(self, event):
         try:
@@ -292,9 +296,10 @@ class ImageCanvas(tk.Frame):
 
         if mode == 4:
             if len(Common.roi_pts) > 4:
+                #self.root.toggle_cross_guide()
                 Common.roi_pts.clear()
-                #Common.roi_pts = Common.roi_pts[-2:]
             if len(Common.roi_pts) == 4:
+                #self.root.toggle_cross_guide()
                 self.canvas.delete('rect')
                 _id = self.canvas.create_rectangle(Common.roi_pts,
                         tags=('rect'),
@@ -306,36 +311,30 @@ class ImageCanvas(tk.Frame):
                 Common.grabcut_rect = [int(_) for _ in self.canvas.coords(_id)]
             # Keep only the starting point
             Common.roi_pts = Common.roi_pts[:2]
-        elif mode == 0:
-            r = 3
-            self.canvas.create_oval(x-r,y-r,x+r,y+r, tags='oval_0',
-                fill=Draw.bg_mask_color, width=0)
-            #print(x,y, len(Common.roi_pts))
-            _mask_img = Image.fromarray(Common.mask)
-            _mask_draw = ImageDraw.Draw(_mask_img)
-            _mask_draw.ellipse([x-r,y-r,x+r,y+r], fill=0)
-            _mask_img.save('tmp_mask.jpg')
-            Common.mask = np.array(_mask_img)
+            return
 
-            #if len(Common.roi_pts) <= 2:
-            #    # Create mask with fg values (color=1)
-            #    self.mask_img = Image.new(mode='L', size=(w,h), color=1)
-            #else:
-            #    _mask_draw = ImageDraw.Draw(self.mask_img)
-            #    _mask_draw.ellipse([x-r,y-r,x+r,y+r], fill=0)
-            #    #self.mask_img.save('tmp_mask.jpg')
-            #    _mask = np.array(self.mask_img, dtype=np.uint8)
-            #    #print(type(_mask), _mask.shape)
-            #    #print([_mask == 0])
-            #    Common.grabcut_mask = _mask
+        if mode == 0:
+            fill_color = Draw.mask_BG['color']
+            mask_val = Draw.mask_BG['val']
         elif mode == 1:
-            pass
+            fill_color = Draw.mask_FG['color']
+            mask_val = Draw.mask_FG['val']
         elif mode == 2:
-            pass
+            fill_color = Draw.mask_PR_BG['color']
+            mask_val = Draw.mask_PR_BG['val']
         elif mode == 3:
-            pass
+            fill_color = Draw.mask_PR_FG['color']
+            mask_val = Draw.mask_PR_FG['val']
         else:
             pass
+        r = Draw.brush_size
+        self.canvas.create_oval(x-r,y-r,x+r,y+r, tags='oval_0', fill=fill_color, width=0)
+        #print(x,y, len(Common.roi_pts))
+        _mask_img = Image.fromarray(Common.mask)
+        _mask_draw = ImageDraw.Draw(_mask_img)
+        _mask_draw.ellipse([x-r,y-r,x+r,y+r], fill=mask_val)
+        #_mask_img.save('tmp_mask.jpg')
+        Common.mask = np.array(_mask_img)
 
     def cancel_set_points(self, event='cancel_set_points'):
         '''drop the last points from the roi_pts'''
