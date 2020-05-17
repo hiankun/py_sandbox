@@ -112,7 +112,7 @@ if __name__ == '__main__':
 
     img = cv2.imread(filename)
     img2 = img.copy()                               # a copy of original image
-    mask = np.zeros(img.shape[:2], dtype = np.uint8) # mask initialized to PR_BG
+    mask = np.zeros(img.shape[:2], dtype = np.uint8) # mask initialized to PR_BG (not BG?)
     output = np.zeros(img.shape, np.uint8)           # output image to be shown
 
     # input and output windows
@@ -162,13 +162,17 @@ if __name__ == '__main__':
             if (rect_or_mask == 0):                 # grabcut with rect
                 bgdmodel = np.zeros((1, 65), np.float64)
                 fgdmodel = np.zeros((1, 65), np.float64)
+                #cv2.imwrite('mask01.jpg', mask)
                 cv2.grabCut(img2, mask, rect, bgdmodel, fgdmodel, 1, cv2.GC_INIT_WITH_RECT)
+                #cv2.imwrite('mask02.jpg', mask)
                 rect_or_mask = 1
 
             elif rect_or_mask == 1:                 # grabcut with mask
                 bgdmodel = np.zeros((1, 65), np.float64)
                 fgdmodel = np.zeros((1, 65), np.float64)
+                #cv2.imwrite('mask03.jpg', mask)
                 cv2.grabCut(img2, mask, rect, bgdmodel, fgdmodel, 1, cv2.GC_INIT_WITH_MASK)
+                #cv2.imwrite('mask04.jpg', mask)
 
         # Final mask is the union of definitely foreground and probably foreground
         # mask such that all 1-pixels (cv2.GC_FGD) and 3-pixels (cv2.GC_PR_FGD) are put to 1 (ie foreground) and

@@ -20,14 +20,14 @@ class DoGrabCut():
             self.method = cv2.GC_INIT_WITH_RECT
             x1,y1,x2,y2 = rect
             self.rect = [x1, y1, x2-x1, y2-y1]
-            mask = np.zeros(self.img.shape[:2], np.uint8)
+            Common.mask = np.zeros(self.img.shape[:2], np.uint8)
         else:
             self.method = cv2.GC_INIT_WITH_MASK
-            mask = fine_mask
+            #Common.mask = fine_mask
             self.rect = None #[0,0,500,500]
-        mask, _, _ = cv2.grabCut(self.img, mask, self.rect, 
+        cv2.grabCut(self.img, Common.mask, self.rect, 
                 self.bgdmodel, self.fgdmodel, 1, self.method)
-        mask2 = np.where((mask==1) + (mask==3), 255, 0).astype('uint8')
+        mask2 = np.where((Common.mask==1) + (Common.mask==3), 255, 0).astype('uint8')
         output = cv2.bitwise_and(self.img, self.img, mask=mask2)
         #res = np.hstack((self.img, output))
         res = np.hstack((self.img, cv2.merge((mask2,mask2,mask2))))
@@ -311,17 +311,23 @@ class ImageCanvas(tk.Frame):
             self.canvas.create_oval(x-r,y-r,x+r,y+r, tags='oval_0',
                 fill=Draw.bg_mask_color, width=0)
             #print(x,y, len(Common.roi_pts))
-            if len(Common.roi_pts) <= 2:
-                # Create mask with fg values (color=1)
-                self.mask_img = Image.new(mode='L', size=(w,h), color=1)
-            else:
-                _mask_draw = ImageDraw.Draw(self.mask_img)
-                _mask_draw.ellipse([x-r,y-r,x+r,y+r], fill=0)
-                #self.mask_img.save('tmp_mask.jpg')
-                _mask = np.array(self.mask_img, dtype=np.uint8)
-                #print(type(_mask), _mask.shape)
-                #print([_mask == 0])
-                Common.grabcut_mask = _mask
+            _mask_img = Image.fromarray(Common.mask)
+            _mask_draw = ImageDraw.Draw(_mask_img)
+            _mask_draw.ellipse([x-r,y-r,x+r,y+r], fill=0)
+            _mask_img.save('tmp_mask.jpg')
+            Common.mask = np.array(_mask_img)
+
+            #if len(Common.roi_pts) <= 2:
+            #    # Create mask with fg values (color=1)
+            #    self.mask_img = Image.new(mode='L', size=(w,h), color=1)
+            #else:
+            #    _mask_draw = ImageDraw.Draw(self.mask_img)
+            #    _mask_draw.ellipse([x-r,y-r,x+r,y+r], fill=0)
+            #    #self.mask_img.save('tmp_mask.jpg')
+            #    _mask = np.array(self.mask_img, dtype=np.uint8)
+            #    #print(type(_mask), _mask.shape)
+            #    #print([_mask == 0])
+            #    Common.grabcut_mask = _mask
         elif mode == 1:
             pass
         elif mode == 2:
