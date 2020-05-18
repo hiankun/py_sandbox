@@ -14,12 +14,13 @@ class DoGrabCut():
         self.bgdmodel = np.zeros((1, 65), np.float64)
         self.fgdmodel = np.zeros((1, 65), np.float64)
 
-    def do_grabcut(self, mode, rect=None, fine_mask=None):
+    def do_grabcut(self, mode, gc_rect=None):
+        #TODO: to scale gc_rect to original size
         Common.polygon = []
         self.img = cv2.imread(Common.img_file)
         if mode == 4:
             self.method = cv2.GC_INIT_WITH_RECT
-            x1,y1,x2,y2 = rect
+            x1,y1,x2,y2 = gc_rect
             self.rect = [x1, y1, x2-x1, y2-y1]
             Common.mask = np.zeros(self.img.shape[:2], np.uint8)
         else:
@@ -64,10 +65,11 @@ class Common:
     tool_info = "Key strokes usage\n"\
                +"-----------------\n"\
                +"Esc: Cancel points\n"\
-               +"g: Toggle guiding\n"\
+               +"c: Toggle guiding\n"\
                +"   cross on/off\n"\
-               +"n: Do GrabCut\n"\
+               +"g: Do GrabCut\n"\
                +"p: Draw polygon\n"\
+               +"x: Clear\n"\
                +"-----------------"
 
 class Draw:
@@ -108,7 +110,7 @@ class App(tk.Tk):
         self.imagecanvas = ImageCanvas(self)
         self.imagecanvas.pack(side='left',fill='both',expand=True) 
 
-        self.bind('<g>', self.toggle_cross_guide)
+        self.bind('<c>', self.toggle_cross_guide)
 
         # the grabCut part
         self.gc = DoGrabCut(self)
@@ -230,21 +232,43 @@ class ImageCanvas(tk.Frame):
         # Mask
         self.mask_img = None
 
+        # Scale
+        self.scale = 1.0
+
     def key_pressed(self, event='key_pressed'):
         self.kp = event.char
+        if self.kp == '+':
+            self.zoom(ratio=1.2)
+        if self.kp == '-':
+            self.zoom(ratio=1/1.2)
         if self.kp == 'p':
             self.draw_poly()
         if self.kp == 'x':
             self.clear_roi()
             Common.roi_pts.clear()
-        if self.kp == 'n':
+        if self.kp == 'g':
             mode = Common.current_tool.get()
             print('do GrabCut using mode {}'.format(mode))
             Common.grabcut_res = self.root.gc.do_grabcut(
                     mode=mode,
-                    rect=Common.grabcut_rect, 
-                    fine_mask=Common.grabcut_mask)
+                    gc_rect=Common.grabcut_rect, 
+                    #gc_mask=Common.grabcut_mask
+                    )
             self.show_cv2_image(Common.grabcut_res)
+
+    def zoom(self, ratio):
+        self.scale = self.scale * ratio
+        #print(f'resizing to {self.scale}')
+        self.scaled_img = self.resize_image(self.pil_img, self.scale)
+        self.scaled_img = ImageTk.PhotoImage(self.scaled_img)
+        self.canvas.itemconfig(self.img_on_canvas, image=self.scaled_img)
+
+    def resize_image(self, image, ratio):
+        _w, _h = image.size
+        # update the draw-able range
+        self.img_w = int(_w*ratio)
+        self.img_h = int(_h*ratio)
+        return image.resize((self.img_w, self.img_w))
 
     def clear_roi(self):
         for tag in ['rect', 'temp_rect', 'guiding_cross', 'oval_0', 'poly']:
@@ -335,6 +359,7 @@ class ImageCanvas(tk.Frame):
             mask_val = Draw.mask_PR_FG['val']
         else:
             pass
+        #TODO: scale these...
         r = Draw.brush_size
         self.canvas.create_oval(x-r,y-r,x+r,y+r, tags='oval_0', fill=fill_color, width=0)
         #print(x,y, len(Common.roi_pts))
@@ -354,28 +379,15 @@ class ImageCanvas(tk.Frame):
         self.tk_img = ImageTk.PhotoImage(pil_img) 
         self.canvas.itemconfig(self.img_on_canvas, image=self.tk_img)
 
-    def get_image(self, img_filename, resize=False):
-        pil_img = Image.open(img_filename)
-        self.img_w, self.img_h = pil_img.size
-        '''TODO:
-        The following code doesn't resize properly...
-        '''
-        if resize:
-            _w, _ = pil_img.size
-            if _w > self.root.width:
-                pil_img = self.resize_image(pil_img, self.root.width/_w)
-            _, _h = pil_img.size
-            if _h > self.root.height:
-                pil_img = self.resize_image(pil_img, self.root.height/_h)
-        return ImageTk.PhotoImage(pil_img)
-
     def show_image(self, img_filename):
         '''NOTE:
         Use `self.img` instead of `img` so that it won't be released
         http://effbot.org/pyfaq/why-do-my-tkinter-images-not-appear.htm
         '''
-        self.img = self.get_image(img_filename)
-        self.canvas.itemconfig(self.img_on_canvas, image=self.img)
+        self.pil_img = Image.open(img_filename)
+        self.img_w, self.img_h = self.pil_img.size
+        self.tk_img = ImageTk.PhotoImage(self.pil_img)
+        self.canvas.itemconfig(self.img_on_canvas, image=self.tk_img)
         self.canvas.config(scrollregion=(0,0,self.img_w, self.img_h))
 
 
