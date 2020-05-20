@@ -29,7 +29,7 @@ class DoGrabCut():
         cv2.grabCut(self.img, Common.mask, self.rect, 
                 self.bgdmodel, self.fgdmodel, 1, self.method)
         res_mask = np.where((Common.mask==1) + (Common.mask==3), 255, 0).astype('uint8')
-        #Common.polygon = self.get_polygon(res_mask)
+        Common.polygon = self.get_polygon(res_mask)
         #output = cv2.bitwise_and(self.img, self.img, mask=res_mask)
         #res = np.hstack((self.img, output))
         #return res
@@ -383,11 +383,12 @@ class ImageCanvas(tk.Frame):
 
     def show_gc_res_mask(self):
         #TODO: create transparent bg
-        _mask = np.stack((Common.gc_res_mask,)*3, axis=-1)
-        np_mask = np.where(_mask==(255,255,255), (255,255,0), (0,0,0)).astype(np.uint8)
-        #pil_mask = Image.fromarray(Common.gc_res_mask).convert('RGB')
-        pil_mask = Image.fromarray(np_mask) #.convert('RGB')
-        blended = Image.blend(self.pil_img, pil_mask, alpha=0.5)
+        _alpha = 0.4
+        _mask = np.stack((Common.gc_res_mask,)*4, axis=-1)
+        np_mask = np.where(_mask==(255,255,255,255),
+                (0,0,255,int(_alpha*255)), (0,0,0,0)).astype(np.uint8)
+        pil_mask = Image.fromarray(np_mask)
+        blended = Image.alpha_composite(self.pil_img.convert('RGBA'), pil_mask)
         self.tk_mask = ImageTk.PhotoImage(blended)
         self.canvas.itemconfig(self.img_on_canvas, image=self.tk_mask)
         #self.canvas.config(scrollregion=(0,0,self.img_w, self.img_h))
