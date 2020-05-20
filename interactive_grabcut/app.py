@@ -29,10 +29,11 @@ class DoGrabCut():
         cv2.grabCut(self.img, Common.mask, self.rect, 
                 self.bgdmodel, self.fgdmodel, 1, self.method)
         res_mask = np.where((Common.mask==1) + (Common.mask==3), 255, 0).astype('uint8')
-        Common.polygon = self.get_polygon(res_mask)
-        output = cv2.bitwise_and(self.img, self.img, mask=res_mask)
-        res = np.hstack((self.img, output))
-        return res
+        #Common.polygon = self.get_polygon(res_mask)
+        #output = cv2.bitwise_and(self.img, self.img, mask=res_mask)
+        #res = np.hstack((self.img, output))
+        #return res
+        return res_mask
 
     def get_polygon(self, mask):
         cnts, _ = cv2.findContours(mask, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
@@ -52,6 +53,7 @@ class Common:
     grabcut_rect = []
     grabcut_mask = []
     grabcut_res = None
+    gc_res_mask = None
     roi_pts = []
     img_file = None
     current_tool = None
@@ -121,7 +123,7 @@ class App(tk.Tk):
 
     def set_img2canvas(self):
         filename = Common.img_file
-        self.imagecanvas.show_image(filename)
+        self.imagecanvas.load_image(filename)
 
     def set_img2canvas_failed(self):
         messagebox.showerror("No image", 
@@ -249,12 +251,17 @@ class ImageCanvas(tk.Frame):
         if self.kp == 'g':
             mode = Common.current_tool.get()
             print('do GrabCut using mode {}'.format(mode))
-            Common.grabcut_res = self.root.gc.do_grabcut(
+            Common.gc_res_mask = self.root.gc.do_grabcut(
                     mode=mode,
                     gc_rect=Common.grabcut_rect, 
-                    #gc_mask=Common.grabcut_mask
                     )
-            self.show_cv2_image(Common.grabcut_res)
+            self.show_gc_res_mask()
+            #Common.grabcut_res = self.root.gc.do_grabcut(
+            #        mode=mode,
+            #        gc_rect=Common.grabcut_rect, 
+            #        #gc_mask=Common.grabcut_mask
+            #        )
+            #self.show_cv2_image(Common.grabcut_res)
 
     def zoom(self, ratio):
         self.scale = self.scale * ratio
@@ -340,7 +347,8 @@ class ImageCanvas(tk.Frame):
                         )
                 # Use coords to transform any rect corners to the format of
                 # (xmin,ymin,xmax,ymax)
-                Common.grabcut_rect = [int(_) for _ in self.canvas.coords(_id)]
+                Common.grabcut_rect = [int(c/self.scale) 
+                        for c in self.canvas.coords(_id)]
             # Keep only the starting point
             Common.roi_pts = Common.roi_pts[:2]
             return
@@ -373,15 +381,26 @@ class ImageCanvas(tk.Frame):
         '''drop the last points from the roi_pts'''
         Common.roi_pts = Common.roi_pts[:-2]
 
+    def show_gc_res_mask(self):
+        #TODO: create transparent bg
+        _mask = np.stack((Common.gc_res_mask,)*3, axis=-1)
+        np_mask = np.where(_mask==(255,255,255), (255,255,0), (0,0,0)).astype(np.uint8)
+        #pil_mask = Image.fromarray(Common.gc_res_mask).convert('RGB')
+        pil_mask = Image.fromarray(np_mask) #.convert('RGB')
+        blended = Image.blend(self.pil_img, pil_mask, alpha=0.5)
+        self.tk_mask = ImageTk.PhotoImage(blended)
+        self.canvas.itemconfig(self.img_on_canvas, image=self.tk_mask)
+        #self.canvas.config(scrollregion=(0,0,self.img_w, self.img_h))
+
     def show_cv2_image(self, cv2img):
         pil_img = Image.fromarray(
                 cv2.cvtColor(cv2img, cv2.COLOR_BGR2RGB))
-        self.tk_img = ImageTk.PhotoImage(pil_img) 
+        self.tk_img = ImageTk.PhotoImage(pil_img.resize((self.img_w, self.img_h))) 
         self.canvas.itemconfig(self.img_on_canvas, image=self.tk_img)
 
-    def show_image(self, img_filename):
+    def load_image(self, img_filename):
         '''NOTE:
-        Use `self.img` instead of `img` so that it won't be released
+        Use `self.tk_img` instead of `tk_img` so that it won't be released
         http://effbot.org/pyfaq/why-do-my-tkinter-images-not-appear.htm
         '''
         self.pil_img = Image.open(img_filename)
