@@ -32,26 +32,21 @@ class DoGrabCut():
                 (Common.mask==1) + (Common.mask==3), 255, 0).astype('uint8')
         Common.polygon = self.get_polygon(res_mask)
         Common.gc_res_mask = res_mask
-        #output = cv2.bitwise_and(self.img, self.img, mask=res_mask)
-        #res = np.hstack((self.img, output))
-        #return res
-        #return res_mask
 
     def get_polygon(self, mask):
         cnts, _ = cv2.findContours(mask, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
-        for cnt in cnts:
-            epsilon = 0.002*cv2.arcLength(cnt, True)
-            approx = cv2.approxPolyDP(cnt, epsilon, True)
-            approx = np.squeeze(approx, axis=1)
-        # append the first point to the end
-        #area = cv2.contourArea(approx)
+        cnt = max(cnts, key=cv2.contourArea)
+        epsilon = 0.002*cv2.arcLength(cnt, True)
+        approx = cv2.approxPolyDP(cnt, epsilon, True)
+        approx = np.squeeze(approx, axis=1)
         approx = np.append(approx, [approx[0]], axis=0)
-        return approx #, area
+        return approx
 
 
 class Common:
     mask = None
     polygon = []
+    closeness = 5
     grabcut_rect = []
     grabcut_mask = []
     grabcut_res = None
@@ -217,9 +212,8 @@ class ImageCanvas(tk.Frame):
                 background=Draw.canvas_bg_color, cursor='crosshair')
         self.canvas.bind_all('<Key>', self.key_pressed)
         self.canvas.bind('<Motion>', self.cursor_move_draw)
-        ##self.canvas.bind('<B1-Motion>', self.set_mask)
+        #self.canvas.bind('<B1-Motion>', self.set_mask)
         self.canvas.bind('<ButtonPress-1>', self.set_mask)
-        #self.canvas.bind('<ButtonRelease-1>', self.do_grabcut)
         self.canvas.bind_all('<Escape>', self.cancel_set_points)
         self.img_on_canvas = self.canvas.create_image(
                 0,0,image=None,anchor='nw', state=tk.DISABLED)
@@ -280,17 +274,17 @@ class ImageCanvas(tk.Frame):
         # update the draw-able range
         self.img_w = int(_w*ratio)
         self.img_h = int(_h*ratio)
-        return image.resize((self.img_w, self.img_w))
+        return image.resize((self.img_w, self.img_h))
 
     def clear_roi(self):
-        for tag in ['rect', 'temp_rect', 'guiding_cross', 'oval_0', 'poly']:
+        for tag in ['rect', 'temp_rect', 'temp_line_seg', 'guiding_cross', 'oval_0', 'poly']:
             self.canvas.delete(tag)
 
     def draw_poly(self):
         self.canvas.delete('poly')
         pts = [int(_) for _ in Common.polygon.flatten()]
-        #print(pts)
-        self.canvas.create_polygon(pts, tags='poly', outline='blue', width=1, fill='')
+        print('polygon: ', pts)
+        self.canvas.create_polygon(pts, tags='poly', outline='blue', width=2, fill='')
 
     def cursor_move_draw(self, event):
         '''
@@ -327,6 +321,21 @@ class ImageCanvas(tk.Frame):
                         outline=Draw.roi_line_color,
                         width=Draw.roi_line_width,
                         )
+        else:
+            for tag in ['guiding_cross', 'temp_rect', 'temp_oval', 'temp_line']:
+                self.canvas.delete(tag)
+            if Common.roi_pts:
+                # Draw the following line segments
+                _x,_y = Common.roi_pts[-2:]
+                self.canvas.create_line(_x,_y,x,y,
+                        tags='temp_line', 
+                        fill=Draw.roi_line_color, 
+                        width=Draw.brush_size)
+                if len(Common.roi_pts) >= 4: # just to keep the drawn line segs
+                    self.canvas.create_line(Common.roi_pts,
+                            tags='temp_line_seg',
+                            fill=Draw.roi_line_color, 
+                            width=Draw.brush_size)
 
     def set_mask(self, event):
         try:
@@ -361,6 +370,7 @@ class ImageCanvas(tk.Frame):
                 # (xmin,ymin,xmax,ymax)
                 Common.grabcut_rect = [int(c/self.scale) 
                         for c in self.canvas.coords(_id)]
+                Common.roi_pts.clear()
             # Keep only the starting point
             #Common.roi_pts = Common.roi_pts[:2]
             return
@@ -379,6 +389,41 @@ class ImageCanvas(tk.Frame):
             mask_val = Draw.mask_PR_FG['val']
         else:
             pass
+
+        if len(Common.roi_pts) >=4:
+            end1 = Common.roi_pts[-4:-2]
+            end2 = Common.roi_pts[-2:]
+            if self.is_close(end1, end2):
+                Common.roi_pts = Common.roi_pts[:-2]
+                self.fine_touch_mask(Common.roi_pts, fill_color, mask_val)
+                Common.roi_pts.clear()
+
+            #self.drag_to_set_mask(x, y, fill_color, mask_val)
+
+    def fine_touch_mask(self, pts, fill_color, mask_val):
+        #TODO: scale these...
+        r = Draw.brush_size
+        # For vision purpose only
+        self.canvas.create_line(pts, tags='temp_line_seg', fill=fill_color, width=r)
+        # The following drawing won't show on the screen but set real mask pixels
+        _mask_img = Image.fromarray(Common.mask)
+        _mask_draw = ImageDraw.Draw(_mask_img)
+        _mask_draw.line(pts, fill=mask_val, width=r)
+        #_mask_img.save('tmp_mask.jpg')
+        Common.mask = np.array(_mask_img)
+
+    def is_close(self, pt0, pt1):
+        try:
+            p0x, p0y = pt0
+            p1x, p1y = pt1
+        except:
+            return False
+        if ( abs(p0x-p1x) < Common.closeness 
+                and abs(p0y-p1y) < Common.closeness ):
+            return True
+        return False
+
+    def drag_to_set_mask(self, x, y, fill_color, mask_val):
         #TODO: scale these...
         r = Draw.brush_size
         self.canvas.create_oval(
@@ -399,7 +444,7 @@ class ImageCanvas(tk.Frame):
         _alpha = 0.4
         _mask = np.stack((Common.gc_res_mask,)*4, axis=-1)
         np_mask = np.where(_mask==(255,255,255,255),
-                (0,0,255,int(_alpha*255)), (0,0,0,0)).astype(np.uint8)
+                (255,200,0,int(_alpha*255)), (0,0,0,0)).astype(np.uint8)
         pil_mask = Image.fromarray(np_mask)
         blended = Image.alpha_composite(self.pil_img.convert('RGBA'), pil_mask)
         self.tk_mask = ImageTk.PhotoImage(blended)
