@@ -14,7 +14,7 @@ class DoGrabCut():
         self.bgdmodel = np.zeros((1, 65), np.float64)
         self.fgdmodel = np.zeros((1, 65), np.float64)
 
-    def do_grabcut(self, mode, gc_rect=None):
+    def cal_mask(self, mode, gc_rect=None):
         #TODO: to scale gc_rect to original size
         Common.polygon = []
         self.img = cv2.imread(Common.img_file)
@@ -28,12 +28,14 @@ class DoGrabCut():
             self.rect = None
         cv2.grabCut(self.img, Common.mask, self.rect, 
                 self.bgdmodel, self.fgdmodel, 1, self.method)
-        res_mask = np.where((Common.mask==1) + (Common.mask==3), 255, 0).astype('uint8')
+        res_mask = np.where(
+                (Common.mask==1) + (Common.mask==3), 255, 0).astype('uint8')
         Common.polygon = self.get_polygon(res_mask)
+        Common.gc_res_mask = res_mask
         #output = cv2.bitwise_and(self.img, self.img, mask=res_mask)
         #res = np.hstack((self.img, output))
         #return res
-        return res_mask
+        #return res_mask
 
     def get_polygon(self, mask):
         cnts, _ = cv2.findContours(mask, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
@@ -215,7 +217,9 @@ class ImageCanvas(tk.Frame):
                 background=Draw.canvas_bg_color, cursor='crosshair')
         self.canvas.bind_all('<Key>', self.key_pressed)
         self.canvas.bind('<Motion>', self.cursor_move_draw)
-        self.canvas.bind('<B1-Motion>', self.set_mask)
+        ##self.canvas.bind('<B1-Motion>', self.set_mask)
+        self.canvas.bind('<ButtonPress-1>', self.set_mask)
+        #self.canvas.bind('<ButtonRelease-1>', self.do_grabcut)
         self.canvas.bind_all('<Escape>', self.cancel_set_points)
         self.img_on_canvas = self.canvas.create_image(
                 0,0,image=None,anchor='nw', state=tk.DISABLED)
@@ -249,26 +253,27 @@ class ImageCanvas(tk.Frame):
             self.clear_roi()
             Common.roi_pts.clear()
         if self.kp == 'g':
-            mode = Common.current_tool.get()
-            print('do GrabCut using mode {}'.format(mode))
-            Common.gc_res_mask = self.root.gc.do_grabcut(
-                    mode=mode,
-                    gc_rect=Common.grabcut_rect, 
-                    )
-            self.show_gc_res_mask()
-            #Common.grabcut_res = self.root.gc.do_grabcut(
-            #        mode=mode,
-            #        gc_rect=Common.grabcut_rect, 
-            #        #gc_mask=Common.grabcut_mask
-            #        )
-            #self.show_cv2_image(Common.grabcut_res)
+            self.do_grabcut()
+
+    def do_grabcut(self):
+        mode = Common.current_tool.get()
+        print('do GrabCut using mode {}'.format(mode))
+        self.root.gc.cal_mask(mode=mode, gc_rect=Common.grabcut_rect)
+        self.show_gc_res_mask()
+        #Common.grabcut_res = self.root.gc.cal_mask(
+        #        mode=mode,
+        #        gc_rect=Common.grabcut_rect, 
+        #        #gc_mask=Common.grabcut_mask
+        #        )
+        #self.show_cv2_image(Common.grabcut_res)
 
     def zoom(self, ratio):
         self.scale = self.scale * ratio
-        #print(f'resizing to {self.scale}')
+        # canvas image
         self.scaled_img = self.resize_image(self.pil_img, self.scale)
         self.scaled_img = ImageTk.PhotoImage(self.scaled_img)
         self.canvas.itemconfig(self.img_on_canvas, image=self.scaled_img)
+        # other items
 
     def resize_image(self, image, ratio):
         _w, _h = image.size
@@ -315,6 +320,13 @@ class ImageCanvas(tk.Frame):
                         tags='guiding_cross', 
                         fill=Draw.cross_line_color, 
                         width=Draw.cross_line_width)
+            if len(Common.roi_pts) == 2: # only one point has been set
+                _x,_y = Common.roi_pts
+                self.canvas.create_rectangle(_x,_y,x,y, 
+                        tags='temp_rect', 
+                        outline=Draw.roi_line_color,
+                        width=Draw.roi_line_width,
+                        )
 
     def set_mask(self, event):
         try:
@@ -350,7 +362,7 @@ class ImageCanvas(tk.Frame):
                 Common.grabcut_rect = [int(c/self.scale) 
                         for c in self.canvas.coords(_id)]
             # Keep only the starting point
-            Common.roi_pts = Common.roi_pts[:2]
+            #Common.roi_pts = Common.roi_pts[:2]
             return
 
         if mode == 0:
@@ -369,7 +381,8 @@ class ImageCanvas(tk.Frame):
             pass
         #TODO: scale these...
         r = Draw.brush_size
-        self.canvas.create_oval(x-r,y-r,x+r,y+r, tags='oval_0', fill=fill_color, width=0)
+        self.canvas.create_oval(
+                x-r,y-r,x+r,y+r, tags='oval_0', fill=fill_color, width=0)
         #print(x,y, len(Common.roi_pts))
         _mask_img = Image.fromarray(Common.mask)
         _mask_draw = ImageDraw.Draw(_mask_img)
