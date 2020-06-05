@@ -1,6 +1,5 @@
 fps_test/
 projectiles/videos/
 cv2_dnn/models/*.pb
-two_cameras/records/
-two_cameras/frames/
+two_cameras/rec_*
 *.tar.bz2
