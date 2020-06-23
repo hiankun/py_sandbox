@@ -51,7 +51,7 @@ def main():
   cv2.namedWindow(trackingWindow, cv2.WINDOW_NORMAL)
   cv2.setMouseCallback(trackingWindow, targetSelector)
 
-  vid = "/media/thk/transcend_2T/DataSet/AquaData/tetra_shrimp/orig_vid/MOV_0876.mp4"
+  vid = "MOV_0876.mp4"
   cap = cv2.VideoCapture(vid)
   center = []
  
