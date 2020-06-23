@@ -48,10 +48,11 @@ def get_tracker(tracker_idx):
 
 def main():
  
-  cv2.namedWindow(trackingWindow, cv2.WINDOW_AUTOSIZE)
+  cv2.namedWindow(trackingWindow, cv2.WINDOW_NORMAL)
   cv2.setMouseCallback(trackingWindow, targetSelector)
 
-  cap = cv2.VideoCapture(0)
+  vid = "/media/thk/transcend_2T/DataSet/AquaData/tetra_shrimp/orig_vid/MOV_0876.mp4"
+  cap = cv2.VideoCapture(vid)
   center = []
  
   while True:
@@ -88,11 +89,11 @@ def main():
  
       cv2.putText(frame, Settings.tracker_type + " Tracker", (20,20), cv2.FONT_HERSHEY_SIMPLEX, 0.5, (0,170,50),2);
       cv2.putText(frame, "FPS : " + str(int(fps)), (20,50), cv2.FONT_HERSHEY_SIMPLEX, 0.5, (0,170,50), 2);
+      filename = './records/frame_{:.3f}.jpg'.format(time.time())
+      cv2.imwrite(filename, frame)
     cv2.imshow(trackingWindow, frame)
-    #filename = './records/frame_{:.3f}.jpg'.format(time.time())
-    #cv2.imwrite(filename, frame)
  
-    if cv2.waitKey(1) & 0xff == ord('q') : break
+    if cv2.waitKey(0) & 0xff == ord('q') : break
 
 
 if __name__ == '__main__' :
