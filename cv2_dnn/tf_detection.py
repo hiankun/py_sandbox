@@ -3,20 +3,26 @@ import cv2
 import time
 import numpy as np
 
-src = 0 #'/home/thk/Downloads/soccer-ball.mp4'
-#MODEL = './models/ssd_mobilenet_v2_coco_2018_03_29.pb'
-#CONFIG = './models/ssd_mobilenet_v2_coco_2018_03_29.pbtxt'
-#MODEL = '/home/thk/Downloads/ssd_inception_v2_coco_2018_01_28/frozen_inference_graph.pb'
-#CONFIG = '/home/thk/Downloads/ssd_inception_v2_coco_2018_01_28/frozen_inference_graph.pbtxt'
+CLASS_SHIFT = 0 # ssd: 0; faster_rcnn: 1
+src = 0
+
+#>>> It's strange that the ssd_mobilenet_v2 model runs slower than other models...
+#MODEL = '/home/thk/Downloads/ssd_mobilenet_v2_coco_2018_03_29/frozen_inference_graph.pb'
+#CONFIG = '/home/thk/Downloads/ssd_mobilenet_v2_coco_2018_03_29/frozen_inference_graph.pbtxt'
+MODEL = '/home/thk/Downloads/ssd_inception_v2_coco_2018_01_28/frozen_inference_graph.pb'
+CONFIG = '/home/thk/Downloads/ssd_inception_v2_coco_2018_01_28/frozen_inference_graph.pbtxt'
+
 #MODEL = '/home/thk/Downloads/faster_rcnn_inception_v2_coco_2018_01_28/frozen_inference_graph.pb'
 #CONFIG = '/home/thk/Downloads/faster_rcnn_inception_v2_coco_2018_01_28/frozen_inference_graph.pbtxt'
+#MODEL = '/home/thk/Downloads/faster_rcnn_resnet50_coco_2018_01_28/frozen_inference_graph.pb'
+#CONFIG = '/home/thk/Downloads/faster_rcnn_resnet50_coco_2018_01_28/frozen_inference_graph.pbtxt'
+
 #LABEL_FILE = './models/coco_labels.txt'
-MODEL = '/home/thk/Downloads/faster_rcnn_resnet50_coco_2018_01_28/frozen_inference_graph.pb'
-CONFIG = '/home/thk/Downloads/faster_rcnn_resnet50_coco_2018_01_28/frozen_inference_graph.pbtxt'
-LABEL_FILE = './models/coco_labels.txt'
+
 #MODEL = './models/ssd_mobilenet_v2_twice.pb'
 #CONFIG = './models/ssd_mobilenet_v2_twice.pbtxt'
 #LABEL_FILE = './models/twice_labels.txt'
+
 NET = cv2.dnn.readNetFromTensorflow(MODEL, CONFIG)
 NET.setPreferableBackend(cv2.dnn.DNN_BACKEND_CUDA)
 NET.setPreferableTarget(cv2.dnn.DNN_TARGET_CUDA)
@@ -32,17 +38,18 @@ def draw_results(img, objects, infer_time=None):
   height, width, _ = img.shape
   for obj in objects[0,0,:,:]:
     score = float(obj[2])
-    if score > 0.6:
+    class_idx = int(obj[1]) + CLASS_SHIFT
+    if score > 0.6 and class_idx == 1:
       xmin = int(obj[3] * width)
       ymin = int(obj[4] * height)
       xmax = int(obj[5] * width)
       ymax = int(obj[6] * height)
       cv2.rectangle(img, (xmin,ymin), (xmax,ymax), (0,255,255), 1)
       if LABELS:
-        label = LABELS[int(obj[1])+1]
+        label = LABELS[class_idx]
         text_w = 110
       else:
-        label = int(obj[1])
+        label = class_idx
         text_w = 60
       cv2.rectangle(img, (xmin,ymin), (xmin+text_w,ymin+20), (0,255,255), -1)
       det_info = '{}:{:.2f}'.format(label, score)
