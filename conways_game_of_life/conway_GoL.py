@@ -69,7 +69,8 @@ class GameOfLife():
     def update_population(self):
         pad_w = 1 #FIX
         arr = np.where(self.population, True, False)
-        p_arr = np.pad(arr, pad_w, mode='constant')
+        #p_arr = np.pad(arr, pad_w, mode='constant')
+        p_arr = np.pad(arr, pad_w, self.pad_with, padder=False)
         status_alive = np.zeros(p_arr.shape).astype(np.bool)
     
         # check live cell
@@ -179,12 +180,12 @@ class GameOfLife():
 
 
 def main():
-    rows = 42
-    cols = 110
-    density = 0.80
-    sleep = 0.25
+    rows = 25
+    cols = 78
+    density = 0.42
+    sleep = 0.10
     gol = GameOfLife((rows, cols), density)
-    gol.init_population(pattern=PATTERNS[5], rand=False)
+    gol.init_population(pattern=PATTERNS[-1], rand=False)
 
     steady = False
     while not steady:
