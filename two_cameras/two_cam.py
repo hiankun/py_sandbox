@@ -3,7 +3,7 @@ import numpy as np
 import time
 from pathlib import Path
 
-CAM_1 = 0
+CAM_1 = 1
 CAM_2 = 2
 DEBUG = False #enable only camera 1
 
@@ -39,14 +39,14 @@ def main():
     while True:
         _, frame_1 = cam_1.read()
         #frame_1 = cv2.flip(frame_1, 0)
-        frame_1 = cv2.rotate(frame_1, cv2.ROTATE_90_COUNTERCLOCKWISE)
+        frame_1_rot = cv2.rotate(frame_1, cv2.ROTATE_90_COUNTERCLOCKWISE)
 
         if not DEBUG:
             _, frame_2 = cam_2.read()
             #frame_2 = cv2.flip(frame_2, 0)
-            frame_2 = cv2.rotate(frame_2, cv2.ROTATE_90_CLOCKWISE)
+            frame_2_rot = cv2.rotate(frame_2, cv2.ROTATE_90_CLOCKWISE)
 
-            res = np.hstack((frame_1, frame_2))
+            res = np.hstack((frame_1_rot, frame_2_rot))
                     #(np.rot90(frame_1,k=-1), np.rot90(frame_2,k=1)))
         else:
             res = frame_1
@@ -58,16 +58,20 @@ def main():
         if key == ord('r'):
             REC = not REC
 
-        if REC:
+        if REC and not DEBUG:
             time_stamp = get_time_stamp()
             res_filename = Path(REC_path)/(time_stamp+'.jpeg')
+            res_filename1 = Path(REC_path)/(time_stamp+'_cam1.jpeg')
+            res_filename2 = Path(REC_path)/(time_stamp+'_cam2.jpeg')
 
             info_str = f'REC:{time_stamp}'
             cv2.rectangle(res_copy, (0,0), (250,20), (0,0,0), -1)
             cv2.circle(res_copy, (10,10), 5, (0,0,255), -1)
             cv2.putText(res_copy, info_str, (20,15), 1, 1, (0,255,255), 1)
 
-            cv2.imwrite(str(res_filename), res)
+            #cv2.imwrite(str(res_filename), res)
+            cv2.imwrite(str(res_filename1), frame_1)
+            cv2.imwrite(str(res_filename2), frame_2)
 
         cv2.imshow('res', res_copy)
     
