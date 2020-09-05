@@ -4,3 +4,5 @@ cv2_dnn/models/*.pb
 two_cameras/rec_*
 two_cameras/backup_rec/
 *.tar.bz2
+
+build
