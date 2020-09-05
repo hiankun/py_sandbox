@@ -65,6 +65,8 @@ https://www.pyimagesearch.com/2020/02/03/how-to-use-opencvs-dnn-module-with-nvid
 
 * Sample: [samples/dnn/object_detection.cpp](
 https://github.com/opencv/opencv/blob/master/samples/dnn/object_detection.cpp)
+  * Maybe useful: [Mask R-CNN example by Learn OpenCV](
+https://www.learnopencv.com/deep-learning-based-object-detection-and-instance-segmentation-using-mask-r-cnn-in-opencv-python-c/)
 * Load model:
   ```
       // Load a model.
