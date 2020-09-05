@@ -57,3 +57,29 @@ https://www.pyimagesearch.com/2020/02/03/how-to-use-opencvs-dnn-module-with-nvid
     ```
 * The final lib is in:
   `/usr/local/lib/python3.6/dist-packages/cv2/python-3.6`
+
+---
+
+# Try to run Cpp examples
+[2020-09-05]
+
+* Sample: [samples/dnn/object_detection.cpp](
+https://github.com/opencv/opencv/blob/master/samples/dnn/object_detection.cpp)
+* Load model:
+  ```
+      // Load a model.
+      Net net = readNet(modelPath, configPath, parser.get<String>("framework"));
+      int backend = parser.get<int>("backend");
+      net.setPreferableBackend(backend);
+      net.setPreferableTarget(parser.get<int>("target"));
+      std::vector<String> outNames = net.getUnconnectedOutLayersNames();
+  ```
+  * Keywords: `outNames`, `getUnconnectedOutLayersNames`
+* Inference:
+  ```
+  preprocess(frame, net, Size(inpWidth, inpHeight), scale, mean, swapRB);
+  ...
+  net.forward(outs, outNames);
+  ...
+  postprocess(frame, outs, net, backend);
+  ```
