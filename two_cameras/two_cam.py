@@ -30,6 +30,7 @@ def main():
     cam_1 = cv2.VideoCapture(CAM_1) #left-half screen
     cam_1.set(3, WIDTH)
     cam_1.set(4, HEIGHT)
+    cv2.namedWindow('res', cv2.WINDOW_NORMAL)
 
     if not DEBUG:
         cam_2 = cv2.VideoCapture(CAM_2) #right-half screen
