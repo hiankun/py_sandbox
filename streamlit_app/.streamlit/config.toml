@@ -1,0 +1,7 @@
+#[server]
+#port = 1234
+
+[client]
+# If false, the error message won't be shown,
+# and the page shows nothing...
+displayEnabled = true 
