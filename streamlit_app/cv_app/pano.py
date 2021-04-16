@@ -1,6 +1,8 @@
 import streamlit as st
 import numpy as np
 import cv2
+from time import time
+from datetime import datetime
 from PIL import Image, ImageOps
 
 class CvFunc():
@@ -25,11 +27,8 @@ def get_textfile_content(filepath):
     return content
 
 def description():
-    content = get_textfile_content('./cv_pano.md')
+    content = get_textfile_content('./pano.md')
     st.sidebar.markdown(content)
-    st.sidebar.info(
-            "This is a test.\n\n"
-            "You need two '\\n' to start a new paragrpah.")
 
 def init_settings():
     st.set_page_config(
@@ -56,7 +55,6 @@ def check_img_orientation(img_file_list, scale=None):
         if scale:
             w,h = img.size
             img = img.resize((int(w*scale),int(h*scale)))
-            print('xxxxxx', scale, (int(w*scale),int(h*scale)), img.size)
         img.save(img_file.name)
         _img_file_list.append(img_file.name)
 
@@ -67,10 +65,10 @@ def main():
     init_settings()
     description()
     img_scale = st.sidebar.slider(
-            label="Imag scale:", 
+            label="Downscale ratio:", 
             min_value=0.1, 
             max_value=1.0, 
-            value=1.0,
+            value=0.1,
             step=0.1)
 
     input_file_list = st.file_uploader(
@@ -81,14 +79,26 @@ def main():
 
     if input_file_list:
         local_img_list = check_img_orientation(input_file_list, img_scale)
-        st.write("The uploaded/scaled images:")
+        st.info("The uploaded/scaled images")
         st.image(local_img_list, width=200)
-        pano_img = cvfunc.get_panorama(local_img_list)
+
+        _process_time = time()
+        with st.spinner(text='Processing...'):
+            pano_img = cvfunc.get_panorama(local_img_list)
+        process_time = time() - _process_time
+
         if pano_img is not None:
-            st.write(f"Result image:\nshape {pano_img.shape}")
+            st.success(f"Result image | "
+            f"Size {pano_img.shape[1]}x{pano_img.shape[0]} | "
+            f"Processing time: {process_time*1000:.2f} ms")
             st.image(pano_img, channels='BGR')
             if st.button('Save'):
-                cv2.imwrite('pano_res.png', pano_img)
+                timestamp = datetime.now().strftime('%Y%m%dT%H%M%S')
+                file2save = f'pano_res-{timestamp}.jpg'
+                cv2.imwrite(f'{file2save}', pano_img)
+                st.write(f'{file2save} has been saved.')
+        else:
+            st.error("Stitch failed.")
 
 
 if __name__=='__main__':

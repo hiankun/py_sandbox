@@ -42,7 +42,7 @@ def get_textfile_content(filepath):
     return content
 
 def description():
-    content = get_textfile_content('./cv_basic.md')
+    content = get_textfile_content('./basic.md')
     st.sidebar.markdown(content)
 
 def init_settings():
