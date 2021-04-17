@@ -1,6 +1,7 @@
 import streamlit as st
 import numpy as np
 import cv2
+from time import time, sleep
 
 class CvFunc():
     def __init__(self):
@@ -57,9 +58,9 @@ def get_cv_img(uploaded_file, img_mode=cv2.IMREAD_COLOR):
     return cv2.cvtColor(_img, cv2.COLOR_BGR2RGB)
 
 def main():
-    cvfunc = CvFunc()
     init_settings()
     description()
+    cvfunc = CvFunc()
 
     input_file = st.file_uploader(
             label="upload an image",
@@ -76,6 +77,33 @@ def main():
 
     if converted_img is not None:
         st.image(converted_img)
+
+    cv_vid_frame = st.empty()
+    cv_vid_info = st.empty()
+    cv_vid_control = st.empty()
+    #cap = cv2.VideoCapture(0)
+    ret = True
+    start_vid = cv_vid_control.checkbox('Start', key='start_vid')
+    while ret:
+        print('xxxxxxxxxxxxx', start_vid)
+        sleep(0.5)
+        if start_vid:
+            print('start: ', time())
+        else:
+            print('end: ', time())
+            ret = False
+    #while ret:
+    #    if start_vid:
+    #        ret, frame = cap.read()
+    #        try:
+    #            converted_img = cvfunc.convert_img(frame, cv_func, show_edge)
+    #            cv_vid_frame.image(converted_img)
+    #            cv_vid_info.info(f"Processing... {time()}")
+    #        except:
+    #            cv_vid_frame.image(frame, channels="BGR")
+    #            cv_vid_info.exception("Image process failed. Showing original input.")
+    #    else:
+    #        cap.release()
 
 
 if __name__=='__main__':

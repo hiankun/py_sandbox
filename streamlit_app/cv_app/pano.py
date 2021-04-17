@@ -5,9 +5,43 @@ from time import time
 from datetime import datetime
 from PIL import Image, ImageOps
 
-class CvFunc():
+class ImgProc():
     def __init__(self):
-        pass
+        self.scale = st.sidebar.slider(
+            label="Downscale ratio:", 
+            min_value=0.1, 
+            max_value=1.0, 
+            value=0.1,
+            step=0.1,
+            help="Use smaller ratio to get result quickly.",
+            )
+        self.save_path = st.sidebar.text_input(
+                label="Save files to:",
+                value="./saved_files",
+                help="Set your path to save the processed files.",
+                )
+
+
+    def check_img_orientation(self, img_file_list):
+        """ Check the orientation of input images and try to correct it.
+        The rotated images will be saved in the working folder.
+        """
+        _img_file_list = []
+        for img_file in img_file_list:
+            img = ImageOps.exif_transpose(
+                    Image.open(img_file))
+            if self.scale:
+                w,h = img.size
+                img = img.resize((int(w*self.scale),int(h*self.scale)))
+            img.save(img_file.name)
+            _img_file_list.append(img_file.name)
+
+        return _img_file_list
+
+
+class CvFunc(ImgProc):
+    def __init__(self):
+        super().__init__()
 
     #@st.cache
     def get_panorama(self, img_files):
@@ -26,9 +60,10 @@ def get_textfile_content(filepath):
         content = f.read()
     return content
 
-def description():
+def sidebar_ui():
     content = get_textfile_content('./pano.md')
     st.sidebar.markdown(content)
+    st.sidebar.markdown('# Control panel')
 
 def init_settings():
     st.set_page_config(
@@ -43,33 +78,11 @@ def get_cv_img(uploaded_file, img_mode=cv2.IMREAD_COLOR):
     return cv2.cvtColor(_img, cv2.COLOR_BGR2RGB)
 
 
-@st.cache
-def check_img_orientation(img_file_list, scale=None):
-    """ Check the orientation of input images and try to correct it.
-    The rotated images will be saved in the working folder.
-    """
-    _img_file_list = []
-    for img_file in img_file_list:
-        img = ImageOps.exif_transpose(
-                Image.open(img_file))
-        if scale:
-            w,h = img.size
-            img = img.resize((int(w*scale),int(h*scale)))
-        img.save(img_file.name)
-        _img_file_list.append(img_file.name)
-
-    return _img_file_list
-
+#@st.cache
 def main():
+    init_settings() #NOTE: must be first
+    sidebar_ui()
     cvfunc = CvFunc()
-    init_settings()
-    description()
-    img_scale = st.sidebar.slider(
-            label="Downscale ratio:", 
-            min_value=0.1, 
-            max_value=1.0, 
-            value=0.1,
-            step=0.1)
 
     input_file_list = st.file_uploader(
             label="Upload images",
@@ -78,7 +91,7 @@ def main():
             )
 
     if input_file_list:
-        local_img_list = check_img_orientation(input_file_list, img_scale)
+        local_img_list = cvfunc.check_img_orientation(input_file_list)
         st.info("The uploaded/scaled images")
         st.image(local_img_list, width=200)
 
