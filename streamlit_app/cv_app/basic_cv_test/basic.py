@@ -1,6 +1,7 @@
 import streamlit as st
 import numpy as np
 import cv2
+from streamlit_webrtc import VideoTransformerBase, webrtc_streamer
 from time import time, sleep
 
 class CvFunc():
@@ -37,6 +38,11 @@ class CvFunc():
         return converted_img
 
 
+class VideoTransformer(VideoTransformerBase, CvFunc):
+    def __init__(self):
+        pass
+
+
 def get_textfile_content(filepath):
     with open(filepath, mode='r') as f:
         content = f.read()
@@ -60,50 +66,40 @@ def get_cv_img(uploaded_file, img_mode=cv2.IMREAD_COLOR):
 def main():
     init_settings()
     description()
-    cvfunc = CvFunc()
 
-    input_file = st.file_uploader(
-            label="upload an image",
-            type=['png','jpg','jpeg']
+    test_case = st.sidebar.radio(
+            label="Test case",
+            options=('image', 'video'),
             )
 
-    cv_func, show_edge = cvfunc.cv_functions()
+    if test_case == 'image':
+        cvfunc = CvFunc()
+        input_file = st.file_uploader(
+                label="upload an image",
+                type=['png','jpg','jpeg']
+                )
 
-    converted_img = None
-    if input_file:
-        cv_img = get_cv_img(input_file)
-        st.image(cv_img)#, channels="BGR")
-        converted_img = cvfunc.convert_img(cv_img, cv_func, show_edge)
+        cv_func, show_edge = cvfunc.cv_functions()
 
-    if converted_img is not None:
-        st.image(converted_img)
+        converted_img = None
+        orig_img_col, converted_img_col = st.beta_columns(2)
+        if input_file:
+            cv_img = get_cv_img(input_file)
+            with orig_img_col:
+                st.header('original image')
+                st.image(cv_img)#, channels="BGR")
+            converted_img = cvfunc.convert_img(cv_img, cv_func, show_edge)
 
-    cv_vid_frame = st.empty()
-    cv_vid_info = st.empty()
-    cv_vid_control = st.empty()
-    #cap = cv2.VideoCapture(0)
-    ret = True
-    start_vid = cv_vid_control.checkbox('Start', key='start_vid')
-    while ret:
-        print('xxxxxxxxxxxxx', start_vid)
-        sleep(0.5)
-        if start_vid:
-            print('start: ', time())
-        else:
-            print('end: ', time())
-            ret = False
-    #while ret:
-    #    if start_vid:
-    #        ret, frame = cap.read()
-    #        try:
-    #            converted_img = cvfunc.convert_img(frame, cv_func, show_edge)
-    #            cv_vid_frame.image(converted_img)
-    #            cv_vid_info.info(f"Processing... {time()}")
-    #        except:
-    #            cv_vid_frame.image(frame, channels="BGR")
-    #            cv_vid_info.exception("Image process failed. Showing original input.")
-    #    else:
-    #        cap.release()
+        if converted_img is not None:
+            with converted_img_col:
+                st.header('converted image')
+                st.image(converted_img)
+
+    elif test_case == 'video':
+        webrtc_streamer(key="webcam")
+    else:
+        st.error('Unknown test case...')
+    
 
 
 if __name__=='__main__':
