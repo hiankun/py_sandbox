@@ -13,21 +13,31 @@ drawing_mode = st.sidebar.selectbox(
 )
 realtime_update = st.sidebar.checkbox("Update in realtime", True)
 
-# Create a canvas component
-canvas_result = st_canvas(
-    fill_color="rgba(255, 165, 0, 0.3)",  # Fixed fill color with some opacity
-    stroke_width=stroke_width,
-    stroke_color=stroke_color,
-    background_color="" if bg_image else bg_color,
-    background_image=Image.open(bg_image) if bg_image else None,
-    update_streamlit=realtime_update,
-    height=150,
-    drawing_mode=drawing_mode,
-    key="canvas",
-)
+# get img info
+_w, _h = 0, 0
+if bg_image:
+    img = Image.open(bg_image)
+    _w, _h  = img.size
+    _w = int(_w/5)
+    _h = int(_h/5)
+    st.write(f'{_w}, {_h}')
 
-# Do something interesting with the image data and paths
-if canvas_result.image_data is not None:
-    st.image(canvas_result.image_data)
-if canvas_result.json_data is not None:
-    st.dataframe(pd.json_normalize(canvas_result.json_data["objects"]))
+    # Create a canvas component
+    canvas_result = st_canvas(
+        fill_color="rgba(255, 165, 0, 0.3)",  # Fixed fill color with some opacity
+        stroke_width=stroke_width,
+        stroke_color=stroke_color,
+        background_color="" if bg_image else bg_color,
+        background_image=Image.open(bg_image) if bg_image else None,
+        update_streamlit=realtime_update,
+        width=_w,
+        height=_h,
+        drawing_mode=drawing_mode,
+        key="canvas",
+    )
+    
+    # Do something interesting with the image data and paths
+    if canvas_result.image_data is not None:
+        st.image(canvas_result.image_data)
+    if canvas_result.json_data is not None:
+        st.dataframe(pd.json_normalize(canvas_result.json_data["objects"]))
