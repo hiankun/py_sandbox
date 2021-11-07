@@ -1,6 +1,9 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 
+# sudo apt install tesseract-ocr
+# pip install pytesseract
+
 import pytesseract
 import cv2
 import argparse
@@ -17,5 +20,6 @@ ap.add_argument('-l', '--lang', default='eng',
 args=vars(ap.parse_args())
 
 img = cv2.imread(args['image'])
+print(img.shape)
 language = args['lang']
 print(pytesseract.image_to_string(img, lang=language))
