@@ -12,7 +12,7 @@ __NOTE: This is an incomplete project.__
 # Test results
 
 ## Tâigí chhìgiām
-![](test_img/taigi.png)
+![](../test_img/taigi.png)
 
 * iōng Enggí:
 ```text
@@ -49,7 +49,7 @@ g Chia si té Z ch6a bﬁnji.
 
 ## English text
 
-![](test_img/python_zen.png)
+![](../test_img/python_zen.png)
 
 ```text
 Python 3.6.2 |Continuum Analytics, Inc.| (default, Jul 20 2017, 13:51:32)
@@ -100,7 +100,7 @@ Namespaces are one honking great idea -- let's do more of those!
 
 ## Vietnamese text
 
-![](test_img/viet.png)
+![](../test_img/viet.png)
 
 ```
 Ý Bài viết chọn lọc
@@ -131,7 +131,7 @@ Mới chọn: Cher ~ Kế hoạch Marshall ~ Viện bảo tàng Louvre
 
 ## 漢字 (using Traditional Chinese)
 
-![](test_img/hanji.png)
+![](../test_img/hanji.png)
 
 ```text
 [李俊民雨詩﹞一犁雖美滿， 猶恨不當春。
