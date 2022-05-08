@@ -20,7 +20,7 @@ def get_ascii(n_row=16):
 
 
 def main():
-    n_row = 16
+    n_row = 16 # will output n_row*n_row characters
     font = ImageFont.truetype(font_path, 24)
     string = get_ascii(n_row)
     string_bbox = font.getbbox(string)
