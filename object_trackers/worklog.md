@@ -1,3 +1,0 @@
-* `color_tracker.py`: pending...
-* `obj_trackers.py`: In conda env, use `pip install opencv-contrib-python` to
-  get the trackers.
